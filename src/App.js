@@ -1,10 +1,10 @@
 import React from "react";
 import { Routes, Route, Link } from "react-router-dom";
-
+import Counter from "./components/example/exampleComponent";
 const Home = () => {
   return (
     <div className="w-full min-h-screen border-2 border-[blue]">
-
+      <Counter />
     </div>
   )
 }
