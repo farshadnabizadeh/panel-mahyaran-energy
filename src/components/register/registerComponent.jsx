@@ -13,6 +13,40 @@ import fa from "../../locales/fa.json";
 
 const t = fa.signUpPage;
 
+// --- SOLUTION: Move InputField outside the SignUpPage component ---
+// Wrap it with React.memo for performance optimization to prevent unnecessary re-renders.
+const InputField = React.memo(({
+    id,
+    name,
+    type,
+    placeholder,
+    value,
+    onChange,
+    icon,
+    required = false,
+}) => (
+    <div className="relative group">
+        <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 group-focus-within:text-blue-500 transition-colors">
+            {icon}
+        </span>
+        <input
+            id={id}
+            name={name}
+            type={type}
+            placeholder={placeholder}
+            value={value}
+            onChange={onChange}
+            required={required}
+            className="w-full py-3 pr-10 pl-4 rounded-xl bg-gray-50 border border-gray-200 text-gray-800 placeholder-gray-400 
+               focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-300 
+               transition-all duration-200 shadow-sm focus:shadow-md"
+        />
+    </div>
+));
+
+// Add display name for better debugging
+InputField.displayName = "InputField";
+
 const SignUpPage = () => {
     const [formData, setFormData] = useState({
         firstName: "",
@@ -43,34 +77,6 @@ const SignUpPage = () => {
         alert(t.alerts.success);
     };
 
-    const InputField = ({
-        id,
-        name,
-        type,
-        placeholder,
-        value,
-        onChange,
-        icon,
-        required = false,
-    }) => (
-        <div className="relative group">
-            <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 group-focus-within:text-blue-500 transition-colors">
-                {icon}
-            </span>
-            <input
-                id={id}
-                name={name}
-                type={type}
-                placeholder={placeholder}
-                value={value}
-                onChange={onChange}
-                required={required}
-                className="w-full py-3 pr-10 pl-4 rounded-xl bg-gray-50 border border-gray-200 text-gray-800 placeholder-gray-400 
-                   focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-300 
-                   transition-all duration-200 shadow-sm focus:shadow-md"
-            />
-        </div>
-    );
 
     return (
         <div
@@ -139,7 +145,7 @@ const SignUpPage = () => {
                         <InputField
                             id="birthDate"
                             name="birthDate"
-                            type="text"
+                            type="text" // For a better UX, consider type="date" or a date-picker library
                             placeholder={t.fields.birthDate}
                             value={formData.birthDate}
                             onChange={handleChange}

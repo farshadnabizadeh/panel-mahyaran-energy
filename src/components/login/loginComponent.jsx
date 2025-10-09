@@ -6,6 +6,29 @@ import fa from "../../locales/fa.json"; // import Persian localization
 // Access translation object
 const t = fa.loginPage;
 
+// --- SOLUTION: Move InputField outside the LoginPage component ---
+// Also, wrap it with React.memo for performance optimization.
+const InputField = React.memo(({ id, name, type, placeholder, value, onChange, icon }) => (
+    <div className="relative group">
+        <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 group-focus-within:text-blue-500 transition-colors">
+            {icon}
+        </span>
+        <input
+            id={id}
+            name={name}
+            type={type}
+            placeholder={placeholder}
+            value={value}
+            onChange={onChange}
+            required
+            className="w-full py-3 pr-10 pl-4 rounded-xl bg-gray-50 border border-gray-200 text-gray-800 placeholder-gray-400 
+      focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-300 
+      transition-all duration-200 shadow-sm focus:shadow-md"
+        />
+    </div>
+));
+
+// The LoginPage component remains largely the same internally.
 const LoginPage = () => {
     const [formData, setFormData] = useState({
         email: "",
@@ -26,26 +49,6 @@ const LoginPage = () => {
         // Example submit handler (replace with backend call)
         alert(`ورود موفقیت‌آمیز: ${formData.email}`);
     };
-
-    const InputField = ({ id, name, type, placeholder, value, onChange, icon }) => (
-        <div className="relative group">
-            <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 group-focus-within:text-blue-500 transition-colors">
-                {icon}
-            </span>
-            <input
-                id={id}
-                name={name}
-                type={type}
-                placeholder={placeholder}
-                value={value}
-                onChange={onChange}
-                required
-                className="w-full py-3 pr-10 pl-4 rounded-xl bg-gray-50 border border-gray-200 text-gray-800 placeholder-gray-400 
-          focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-300 
-          transition-all duration-200 shadow-sm focus:shadow-md"
-            />
-        </div>
-    );
 
     return (
         <div
