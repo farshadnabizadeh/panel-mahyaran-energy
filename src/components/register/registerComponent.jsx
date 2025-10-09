@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { FaUser, FaIdCard, FaEnvelope, FaLock, FaUsers, FaBirthdayCake, FaUserTie } from 'react-icons/fa';
-
+import Login from '../../assets/img/Login.jpg'
 const SignUpPage = () => {
     // State and handlers remain exactly the same
     const [formData, setFormData] = useState({
@@ -37,7 +37,7 @@ const SignUpPage = () => {
         console.log("Form Submitted:", formData);
         alert("ثبت نام با موفقیت انجام شد!");
     };
-    
+
     // The reusable InputField component remains the same
     const InputField = ({ id, name, type, placeholder, value, onChange, icon, required = false }) => (
         <div className="relative">
@@ -61,7 +61,7 @@ const SignUpPage = () => {
         // CHANGE: The main container now directly manages the two-column layout
         // and ensures it takes up the full screen height.
         <div dir="rtl" className="w-full min-h-screen flex flex-col-reverse md:flex-row bg-gray-100">
-            
+
             {/* Right Side: The Form */}
             {/* CHANGE: This section now takes half the width on desktop and is a flex container
                 to center the form content vertically. It will also scroll if content overflows. */}
@@ -73,11 +73,11 @@ const SignUpPage = () => {
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             {/* All form fields are the same as before */}
-                             <InputField
+                            <InputField
                                 id="firstName" name="firstName" type="text" placeholder="نام"
                                 value={formData.firstName} onChange={handleChange} icon={<FaUser className="text-gray-400" />} required
                             />
-                             <InputField
+                            <InputField
                                 id="lastName" name="lastName" type="text" placeholder="نام خانوادگی"
                                 value={formData.lastName} onChange={handleChange} icon={<FaUser className="text-gray-400" />} required
                             />
@@ -94,7 +94,7 @@ const SignUpPage = () => {
                                     </label>
                                 </div>
                             </div>
-                             <InputField
+                            <InputField
                                 id="nationalId" name="nationalId" type="text" placeholder="کد ملی"
                                 value={formData.nationalId} onChange={handleChange} icon={<FaIdCard className="text-gray-400" />} required
                             />
@@ -102,19 +102,19 @@ const SignUpPage = () => {
                                 id="birthDate" name="birthDate" type="text" placeholder="تاریخ تولد (مثال: 1375/05/14)"
                                 value={formData.birthDate} onChange={handleChange} icon={<FaBirthdayCake className="text-gray-400" />} required
                             />
-                             <InputField
+                            <InputField
                                 id="fatherName" name="fatherName" type="text" placeholder="نام پدر"
                                 value={formData.fatherName} onChange={handleChange} icon={<FaUserTie className="text-gray-400" />} required
                             />
-                             <InputField
+                            <InputField
                                 id="shenasnamehNumber" name="shenasnamehNumber" type="text" placeholder="شماره شناسنامه"
                                 value={formData.shenasnamehNumber} onChange={handleChange} icon={<FaIdCard className="text-gray-400" />} required
                             />
-                             <InputField
+                            <InputField
                                 id="referrerUsername" name="referrerUsername" type="text" placeholder="نام کاربری معرف"
                                 value={formData.referrerUsername} onChange={handleChange} icon={<FaUsers className="text-gray-400" />}
                             />
-                             <InputField
+                            <InputField
                                 id="email" name="email" type="email" placeholder="ایمیل (اختیاری)"
                                 value={formData.email} onChange={handleChange} icon={<FaEnvelope className="text-gray-400" />}
                             />
@@ -131,11 +131,11 @@ const SignUpPage = () => {
                                     </label>
                                 </div>
                             </div>
-                             <InputField
+                            <InputField
                                 id="password" name="password" type="password" placeholder="رمز عبور"
                                 value={formData.password} onChange={handleChange} icon={<FaLock className="text-gray-400" />} required
                             />
-                             <InputField
+                            <InputField
                                 id="confirmPassword" name="confirmPassword" type="password" placeholder="تکرار رمز عبور"
                                 value={formData.confirmPassword} onChange={handleChange} icon={<FaLock className="text-gray-400" />} required
                             />
@@ -157,9 +157,9 @@ const SignUpPage = () => {
             {/* CHANGE: This section is now designed to take up half the width and full screen height on desktop.
                 On mobile, it's a shorter, fixed-height block. */}
             <div className="w-full md:w-1/2 h-64 md:h-screen relative">
-                 <img
+                <img
                     className="w-full h-full object-cover"
-                    src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto-format&fit=crop&w=1287&q=80"
+                    src={Login}
                     alt="Team working together"
                 />
                 {/* Optional but recommended: Add an overlay to make text more readable */}
