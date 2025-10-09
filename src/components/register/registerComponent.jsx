@@ -165,7 +165,7 @@ const SignUpPage = () => {
             {/* Left Side: The Image */}
             <div className="w-full md:w-1/2 h-64 md:h-screen relative">
                 <img
-                    className="w-full h-full object-cover"
+                    className="w-full h-full"
                     src={Login}
                     // --- UPDATED: Use translation file for image alt text ---
                     alt={t.image.alt}
