@@ -1,0 +1,87 @@
+{
+    "signUpPage": {
+        "title": "ایجاد حساب کاربری",
+        "subtitle": "برای پیوستن به ما، لطفا فرم زیر را تکمیل کنید.",
+        "buttonText": "ثبت نام",
+        "alerts": {
+            "passwordMismatch": "رمزهای عبور مطابقت ندارند!",
+            "success": "ثبت نام با موفقیت انجام شد!"
+        },
+        "image": {
+            "alt": "تیمی که با هم کار می کنند",
+            "overlayTitle": "به ما بپیوندید",
+            "overlaySubtitle": "دنیایی از فرصت‌ها در انتظار شماست."
+        },
+        "fields": {
+            "firstName": "نام",
+            "lastName": "نام خانوادگی",
+            "nationality": "ملیت:",
+            "iran": "ایران",
+            "other": "غیر ایران",
+            "nationalId": "کد ملی",
+            "birthDate": "تاریخ تولد (مثال: 1375/05/14)",
+            "fatherName": "نام پدر",
+            "shenasnamehNumber": "شماره شناسنامه",
+            "referrerUsername": "نام کاربری معرف",
+            "email": "ایمیل (اختیاری)",
+            "gender": "جنسیت:",
+            "male": "مرد",
+            "female": "زن",
+            "password": "رمز عبور",
+            "confirmPassword": "تکرار رمز عبور"
+        },
+        "loginPrompt": "حساب دارید؟",
+        "loginLink": "ورود به حساب"
+    },
+    "loginPage": {
+        "title": "ورود به حساب کاربری",
+        "subtitle": "برای دسترسی به حساب خود، اطلاعات ورود را وارد کنید.",
+        "fields": {
+            "email": "ایمیل",
+            "password": "رمز عبور",
+            "rememberMe": "مرا به خاطر بسپار"
+        },
+        "buttonText": "ورود",
+        "forgotPassword": "فراموشی رمز عبور؟",
+        "noAccount": "حساب کاربری ندارید؟",
+        "signUp": "ثبت‌نام کنید",
+        "image": {
+            "alt": "صفحه ورود کاربر",
+            "overlayTitle": "به پرتال مهیاران خوش آمدید",
+            "overlaySubtitle": "به حساب خود وارد شوید و ادامه دهید."
+        }
+    },
+    "forgotPasswordPage": {
+        "title": "فراموشی رمز عبور",
+        "subtitle": "آدرس ایمیل خود را وارد کنید تا لینک بازیابی برایتان ارسال شود.",
+        "fields": {
+            "email": "ایمیل"
+        },
+        "buttonText": "ارسال لینک بازیابی",
+        "backToLogin": "بازگشت به صفحه ورود",
+        "image": {
+            "alt": "بازیابی رمز عبور",
+            "overlayTitle": "نگران نباشید!",
+            "overlaySubtitle": "ما به شما کمک می‌کنیم تا دوباره دسترسی پیدا کنید."
+        },
+        "alerts": {
+            "success": "لینک بازیابی با موفقیت ارسال شد!"
+        }
+    },
+    "panel": {
+        "sidebar": {
+            "title": "پنل کاربری",
+            "menu": {
+                "dashboard": "داشبورد",
+                "profile": "پروفایل",
+                "settings": "تنظیمات",
+                "about": "درباره",
+                "logout": "خروج"
+            }
+        },
+        "dashboard": {
+            "title": "داشبورد",
+            "welcome": "به پنل کاربری خود خوش آمدید! در اینجا می‌توانید اطلاعات کلی سیستم را مشاهده کنید."
+        }
+    }
+}

@@ -1,31 +1,30 @@
 import React from "react";
-import { Routes, Route, Link } from "react-router-dom";
-import Counter from "./components/example/exampleComponent";
-const Home = () => {
-  return (
-    <div className="w-full min-h-screen border-2 border-[blue]">
-      <Counter />
-    </div>
-  )
-}
-const About = () => {
-  return (
-    <div className="w-full min-h-screen border-2 border-[red]">
+import { Routes, Route } from "react-router-dom";
 
-    </div>
-  )
-}
+import Counter from "./components/example/exampleComponent";
+import RegisterForm from "./components/register/registerComponent";
+import LoginComponent from "./components/login/loginComponent";
+import ForgotPasswordPage from "./components/forgotPassword/ForgotPasswordPage";
+import PanelLayout from "./components/layout/panelLayout";
+import DashboardHome from "./components/dashboard/dashboardHome";
+
 export default function App() {
   return (
-    <div className="p-6">
-      <nav className="space-x-4">
-        <Link to="/" className="text-blue-500">Home</Link>
-        <Link to="/about" className="text-blue-500">About</Link>
-      </nav>
-
+    <div className="w-full min-h-screen">
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/about" element={<About />} />
+        {/* Public routes */}
+        <Route path="/" element={<RegisterForm />} />
+        <Route path="/login" element={<LoginComponent />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/about" element={<Counter />} />
+
+        {/* Panel layout (private routes) */}
+        <Route path="/panel" element={<PanelLayout />}>
+          <Route index element={<DashboardHome />} />
+          {/* other routes inside panel */}
+          <Route path="profile" element={<div>پروفایل کاربر</div>} />
+          <Route path="settings" element={<div>تنظیمات</div>} />
+        </Route>
       </Routes>
     </div>
   );
