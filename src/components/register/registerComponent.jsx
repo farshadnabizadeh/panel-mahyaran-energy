@@ -158,7 +158,7 @@ const SignUpPage = () => {
                 On mobile, it's a shorter, fixed-height block. */}
             <div className="w-full md:w-1/2 h-64 md:h-screen relative">
                 <img
-                    className="w-full h-full object-cover"
+                    className="w-full h-full"
                     src={Login}
                     alt="Team working together"
                 />
