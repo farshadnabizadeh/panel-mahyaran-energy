@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { FaEnvelope, FaLock } from "react-icons/fa";
 import LoginImage from "../../assets/img/Login.jpg";
 import fa from "../../locales/fa.json"; // import Persian localization
-
+import { useNavigate } from "react-router-dom";
 // Access translation object
 const t = fa.loginPage;
 
@@ -30,6 +30,7 @@ const InputField = React.memo(({ id, name, type, placeholder, value, onChange, i
 
 // The LoginPage component remains largely the same internally.
 const LoginPage = () => {
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({
         email: "",
         password: "",
@@ -46,8 +47,7 @@ const LoginPage = () => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        // Example submit handler (replace with backend call)
-        alert(`ورود موفقیت‌آمیز: ${formData.email}`);
+        navigate("/panel");
     };
 
     return (
