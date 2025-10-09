@@ -1,0 +1,34 @@
+{
+    "signUpPage": {
+        "title": "ایجاد حساب کاربری",
+        "subtitle": "برای پیوستن به ما، لطفا فرم زیر را تکمیل کنید.",
+        "buttonText": "ثبت نام",
+        "alerts": {
+            "passwordMismatch": "رمزهای عبور مطابقت ندارند!",
+            "success": "ثبت نام با موفقیت انجام شد!"
+        },
+        "image": {
+            "alt": "تیمی که با هم کار می کنند",
+            "overlayTitle": "به ما بپیوندید",
+            "overlaySubtitle": "دنیایی از فرصت‌ها در انتظار شماست."
+        },
+        "fields": {
+            "firstName": "نام",
+            "lastName": "نام خانوادگی",
+            "nationality": "ملیت:",
+            "iran": "ایران",
+            "other": "غیر ایران",
+            "nationalId": "کد ملی",
+            "birthDate": "تاریخ تولد (مثال: 1375/05/14)",
+            "fatherName": "نام پدر",
+            "shenasnamehNumber": "شماره شناسنامه",
+            "referrerUsername": "نام کاربری معرف",
+            "email": "ایمیل (اختیاری)",
+            "gender": "جنسیت:",
+            "male": "مرد",
+            "female": "زن",
+            "password": "رمز عبور",
+            "confirmPassword": "تکرار رمز عبور"
+        }
+    }
+}
