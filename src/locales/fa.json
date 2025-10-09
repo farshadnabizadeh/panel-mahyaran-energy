@@ -29,6 +29,26 @@
             "female": "زن",
             "password": "رمز عبور",
             "confirmPassword": "تکرار رمز عبور"
+        },
+        "loginPrompt": "حساب دارید؟",
+        "loginLink": "ورود به حساب"
+    },
+    "loginPage": {
+        "title": "ورود به حساب کاربری",
+        "subtitle": "برای دسترسی به حساب خود، اطلاعات ورود را وارد کنید.",
+        "fields": {
+            "email": "ایمیل",
+            "password": "رمز عبور",
+            "rememberMe": "مرا به خاطر بسپار"
+        },
+        "buttonText": "ورود",
+        "forgotPassword": "فراموشی رمز عبور؟",
+        "noAccount": "حساب کاربری ندارید؟",
+        "signUp": "ثبت‌نام کنید",
+        "image": {
+            "alt": "صفحه ورود کاربر",
+            "overlayTitle": "به پرتال مهیاران خوش آمدید",
+            "overlaySubtitle": "به حساب خود وارد شوید و ادامه دهید."
         }
     }
 }
