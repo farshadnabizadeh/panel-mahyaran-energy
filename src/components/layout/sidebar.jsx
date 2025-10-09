@@ -77,7 +77,7 @@ export default function Sidebar({ isOpen, onClose }) {
                     </NavLink>
 
                     <NavLink
-                        to="#"
+                        to="/login"
                         onClick={onClose}
                         className={({ isActive }) =>
                             `flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 transition ${isActive ? "bg-white/20 font-semibold" : ""
