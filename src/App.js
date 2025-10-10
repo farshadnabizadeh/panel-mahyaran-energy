@@ -7,7 +7,7 @@ import LoginComponent from "./components/login/loginComponent";
 import ForgotPasswordPage from "./components/forgotPassword/ForgotPasswordPage";
 import PanelLayout from "./components/layout/panelLayout";
 import DashboardHome from "./components/dashboard/dashboardHome";
-
+import NetworkComponent from "./components/dashboard/network/networkComponent";
 export default function App() {
   return (
     <div className="w-full min-h-screen">
@@ -24,6 +24,7 @@ export default function App() {
           {/* other routes inside panel */}
           <Route path="profile" element={<div>پروفایل کاربر</div>} />
           <Route path="settings" element={<div>تنظیمات</div>} />
+          <Route path="network" element={<NetworkComponent />} />
         </Route>
       </Routes>
     </div>
