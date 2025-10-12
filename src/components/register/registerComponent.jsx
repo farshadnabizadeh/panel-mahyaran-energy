@@ -11,10 +11,30 @@ import {
 import Login from "../../assets/img/Login.jpg";
 import fa from "../../locales/fa.json";
 
+// API function
+const registerUser = async (userData) => {
+    const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api'; // Update with your Laravel API URL
+    
+    const response = await fetch(`${API_BASE_URL}/register`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+        },
+        body: JSON.stringify(userData),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(JSON.stringify(data.errors || { general: data.message || 'Registration failed' }));
+    }
+
+    return data;
+};
+
 const t = fa.signUpPage;
 
-// --- SOLUTION: Move InputField outside the SignUpPage component ---
-// Wrap it with React.memo for performance optimization to prevent unnecessary re-renders.
 const InputField = React.memo(({
     id,
     name,
@@ -44,7 +64,6 @@ const InputField = React.memo(({
     </div>
 ));
 
-// Add display name for better debugging
 InputField.displayName = "InputField";
 
 const SignUpPage = () => {
@@ -63,20 +82,82 @@ const SignUpPage = () => {
         confirmPassword: "",
     });
 
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [success, setSuccess] = useState(false);
+
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
+        
+        // Handle radio buttons
+        if (e.target.type === 'radio') {
+            setFormData((prev) => ({ ...prev, [name]: value }));
+        } else {
+            setFormData((prev) => ({ ...prev, [name]: value }));
+        }
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        // Client-side password confirmation check
         if (formData.password !== formData.confirmPassword) {
-            alert(t.alerts.passwordMismatch);
+            setError(t.alerts.passwordMismatch);
             return;
         }
-        alert(t.alerts.success);
-    };
 
+        setLoading(true);
+        setError(null);
+        setSuccess(false);
+
+        try {
+            // Prepare data for API - exclude confirmPassword and add password_confirmation
+            const apiData = {
+                first_name: formData.firstName,
+                last_name: formData.lastName,
+                nationality: formData.nationality,
+                national_id: formData.nationalId,
+                birth_date: formData.birthDate,
+                father_name: formData.fatherName,
+                shenasnameh_number: formData.shenasnamehNumber,
+                referrer_username: formData.referrerUsername,
+                email: formData.email,
+                gender: formData.gender,
+                password: formData.password,
+                password_confirmation: formData.confirmPassword, // Laravel expects this field name
+            };
+
+            const response = await registerUser(apiData);
+            
+            // Registration successful
+            setSuccess(true);
+            setError(null);
+            
+            console.log('Registration successful:', response);
+            
+            // Optional: Redirect to login page after successful registration
+            // setTimeout(() => {
+            //     window.location.href = '/login';
+            // }, 2000);
+
+        } catch (err) {
+            // Handle validation errors from Laravel
+            try {
+                const errorData = JSON.parse(err.message);
+                if (errorData.errors) {
+                    // Get the first error message
+                    const allErrors = Object.values(errorData.errors).flat();
+                    setError(allErrors[0]);
+                } else {
+                    setError(errorData.general || 'Registration failed');
+                }
+            } catch (parseErr) {
+                setError('Registration failed');
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <div
@@ -89,6 +170,20 @@ const SignUpPage = () => {
                     {t.title}
                 </h2>
                 <p className="text-gray-500 mb-8 text-base sm:text-lg">{t.subtitle}</p>
+
+                {/* Error message */}
+                {error && (
+                    <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+                        {error}
+                    </div>
+                )}
+
+                {/* Success message */}
+                {success && (
+                    <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+                        {t.alerts.success || 'کاربر با موفقیت ثبت شد ✅'}
+                    </div>
+                )}
 
                 <form onSubmit={handleSubmit} className="space-y-8">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
@@ -145,7 +240,7 @@ const SignUpPage = () => {
                         <InputField
                             id="birthDate"
                             name="birthDate"
-                            type="text" // For a better UX, consider type="date" or a date-picker library
+                            type="date"
                             placeholder={t.fields.birthDate}
                             value={formData.birthDate}
                             onChange={handleChange}
@@ -235,11 +330,24 @@ const SignUpPage = () => {
 
                     <button
                         type="submit"
-                        className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-4 rounded-xl 
-                     shadow-md hover:from-blue-700 hover:to-indigo-700 
-                     focus:ring-4 focus:ring-blue-300 transition-all duration-300"
+                        disabled={loading}
+                        className={`w-full font-bold py-4 rounded-xl shadow-md transition-all duration-300 ${
+                            loading
+                                ? 'bg-gray-400 cursor-not-allowed'
+                                : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 focus:ring-4 focus:ring-blue-300'
+                        }`}
                     >
-                        {t.buttonText}
+                        {loading ? (
+                            <span className="flex items-center justify-center">
+                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                {t.loading || 'در حال پردازش...'}
+                            </span>
+                        ) : (
+                            t.buttonText
+                        )}
                     </button>
 
                     {/* --- Login section --- */}
