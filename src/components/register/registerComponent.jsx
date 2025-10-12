@@ -8,13 +8,14 @@ import {
     FaBirthdayCake,
     FaUserTie,
 } from "react-icons/fa";
+import Swal from 'sweetalert2'; // Import SweetAlert2
 import Login from "../../assets/img/Login.jpg";
 import fa from "../../locales/fa.json";
 
 // API function
 const registerUser = async (userData) => {
     const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api'; // Update with your Laravel API URL
-    
+
     const response = await fetch(`${API_BASE_URL}/register`, {
         method: 'POST',
         headers: {
@@ -83,12 +84,10 @@ const SignUpPage = () => {
     });
 
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
-    const [success, setSuccess] = useState(false);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        
+
         // Handle radio buttons
         if (e.target.type === 'radio') {
             setFormData((prev) => ({ ...prev, [name]: value }));
@@ -99,16 +98,20 @@ const SignUpPage = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         // Client-side password confirmation check
         if (formData.password !== formData.confirmPassword) {
-            setError(t.alerts.passwordMismatch);
+            Swal.fire({
+                icon: 'error',
+                title: 'خطا',
+                text: t.alerts.passwordMismatch || 'رمزهای عبور مطابقت ندارند',
+                confirmButtonText: 'متوجه شدم',
+                confirmButtonColor: '#3085d6',
+            });
             return;
         }
 
         setLoading(true);
-        setError(null);
-        setSuccess(false);
 
         try {
             // Prepare data for API - exclude confirmPassword and add password_confirmation
@@ -128,33 +131,100 @@ const SignUpPage = () => {
             };
 
             const response = await registerUser(apiData);
-            
-            // Registration successful
-            setSuccess(true);
-            setError(null);
-            
-            console.log('Registration successful:', response);
-            
-            // Optional: Redirect to login page after successful registration
-            // setTimeout(() => {
-            //     window.location.href = '/login';
-            // }, 2000);
+
+            // Show success message
+            Swal.fire({
+                icon: 'success',
+                title: 'موفقیت',
+                text: response.message || t.alerts.success || 'کاربر با موفقیت ثبت شد ✅',
+                confirmButtonText: 'ورود به حساب',
+                confirmButtonColor: '#28a745',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Redirect to login page
+                    window.location.href = '/login';
+                }
+            });
 
         } catch (err) {
             // Handle validation errors from Laravel
             try {
                 const errorData = JSON.parse(err.message);
-                if (errorData.errors) {
-                    // Get the first error message
-                    const allErrors = Object.values(errorData.errors).flat();
-                    setError(allErrors[0]);
+
+                // Check if errorData has validation errors (not the "errors" wrapper)
+                if (Object.keys(errorData).length > 0 && !errorData.general) {
+                    // Convert all validation errors to a single string
+                    const allErrors = Object.entries(errorData)
+                        .map(([field, messages]) => {
+                            // Map field names to user-friendly names
+                            const fieldNames = {
+                                'first_name': 'نام',
+                                'last_name': 'نام خانوادگی',
+                                'nationality': 'ملیت',
+                                'national_id': 'کد ملی',
+                                'birth_date': 'تاریخ تولد',
+                                'father_name': 'نام پدر',
+                                'shenasnameh_number': 'شماره شناسنامه',
+                                'referrer_username': 'نام کاربری معرف',
+                                'email': 'ایمیل',
+                                'gender': 'جنسیت',
+                                'password': 'رمز عبور',
+                                'password_confirmation': 'تکرار رمز عبور'
+                            };
+
+                            const fieldName = fieldNames[field] || field.replace('_', ' ');
+                            return `${fieldName}: ${messages[0]}`;
+                        })
+                        .join('\n\n');
+
+                    // Show all validation errors in SweetAlert
+                    Swal.fire({
+                        icon: 'error',
+                        title: '<div style="direction: rtl; text-align: right;">خطاهای ثبت نام</div>',
+                        html: `<div style="direction: rtl; text-align: right; font-size: 1rem; line-height: 1.6;">${allErrors.replace(/\n\n/g, '<br><br>')}</div>`,
+                        confirmButtonText: 'متوجه شدم',
+                        confirmButtonColor: '#d33',
+                        customClass: {
+                            popup: 'text-right',
+                            content: 'text-right'
+                        },
+                        width: 500,
+                        padding: '1.5em'
+                    });
                 } else {
-                    setError(errorData.general || 'Registration failed');
+                    // Handle general errors
+                    Swal.fire({
+                        icon: 'error',
+                        title: '<div style="direction: rtl; text-align: right;">خطا</div>',
+                        text: errorData.general || 'ثبت نام با خطا مواجه شد',
+                        confirmButtonText: 'متوجه شدم',
+                        confirmButtonColor: '#d33',
+                        customClass: {
+                            popup: 'text-right',
+                            content: 'text-right'
+                        },
+                        width: 400,
+                        padding: '1.5em'
+                    });
                 }
             } catch (parseErr) {
-                setError('Registration failed');
+                // Handle JSON parsing errors
+                Swal.fire({
+                    icon: 'error',
+                    title: '<div style="direction: rtl; text-align: right;">خطا</div>',
+                    text: 'ثبت نام با خطا مواجه شد',
+                    confirmButtonText: 'متوجه شدم',
+                    confirmButtonColor: '#d33',
+                    customClass: {
+                        popup: 'text-right',
+                        content: 'text-right'
+                    },
+                    width: 400,
+                    padding: '1.5em'
+                });
             }
-        } finally {
+        }
+        finally {
             setLoading(false);
         }
     };
@@ -166,24 +236,10 @@ const SignUpPage = () => {
         >
             {/* --- Right side form --- */}
             <div className="w-full overflow-y-scroll md:w-1/2 flex flex-col justify-center px-6 sm:px-12 md:px-16 py-10 md:py-16">
-                <h2 className="text-3xl mt-[300px] sm:text-4xl font-extrabold text-gray-800 mb-3">
+                <h2 className="text-3xl sm:text-4xl mt-[200px] font-extrabold text-gray-800 mb-3">
                     {t.title}
                 </h2>
                 <p className="text-gray-500 mb-8 text-base sm:text-lg">{t.subtitle}</p>
-
-                {/* Error message */}
-                {error && (
-                    <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
-                        {error}
-                    </div>
-                )}
-
-                {/* Success message */}
-                {success && (
-                    <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-lg">
-                        {t.alerts.success || 'کاربر با موفقیت ثبت شد ✅'}
-                    </div>
-                )}
 
                 <form onSubmit={handleSubmit} className="space-y-8">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
@@ -331,11 +387,10 @@ const SignUpPage = () => {
                     <button
                         type="submit"
                         disabled={loading}
-                        className={`w-full font-bold py-4 rounded-xl shadow-md transition-all duration-300 ${
-                            loading
-                                ? 'bg-gray-400 cursor-not-allowed'
-                                : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 focus:ring-4 focus:ring-blue-300'
-                        }`}
+                        className={`w-full font-bold py-4 rounded-xl shadow-md transition-all duration-300 ${loading
+                            ? 'bg-gray-400 cursor-not-allowed'
+                            : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 focus:ring-4 focus:ring-blue-300'
+                            }`}
                     >
                         {loading ? (
                             <span className="flex items-center justify-center">
