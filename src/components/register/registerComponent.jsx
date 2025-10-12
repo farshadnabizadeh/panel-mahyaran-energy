@@ -8,13 +8,34 @@ import {
     FaBirthdayCake,
     FaUserTie,
 } from "react-icons/fa";
+import Swal from 'sweetalert2'; // Import SweetAlert2
 import Login from "../../assets/img/Login.jpg";
 import fa from "../../locales/fa.json";
 
+// API function
+const registerUser = async (userData) => {
+    const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api'; // Update with your Laravel API URL
+
+    const response = await fetch(`${API_BASE_URL}/register`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+        },
+        body: JSON.stringify(userData),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(JSON.stringify(data.errors || { general: data.message || 'Registration failed' }));
+    }
+
+    return data;
+};
+
 const t = fa.signUpPage;
 
-// --- SOLUTION: Move InputField outside the SignUpPage component ---
-// Wrap it with React.memo for performance optimization to prevent unnecessary re-renders.
 const InputField = React.memo(({
     id,
     name,
@@ -44,7 +65,6 @@ const InputField = React.memo(({
     </div>
 ));
 
-// Add display name for better debugging
 InputField.displayName = "InputField";
 
 const SignUpPage = () => {
@@ -63,29 +83,160 @@ const SignUpPage = () => {
         confirmPassword: "",
     });
 
+    const [loading, setLoading] = useState(false);
+
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
+
+        // Handle radio buttons
+        if (e.target.type === 'radio') {
+            setFormData((prev) => ({ ...prev, [name]: value }));
+        } else {
+            setFormData((prev) => ({ ...prev, [name]: value }));
+        }
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // Client-side password confirmation check
         if (formData.password !== formData.confirmPassword) {
-            alert(t.alerts.passwordMismatch);
+            Swal.fire({
+                icon: 'error',
+                title: 'خطا',
+                text: t.alerts.passwordMismatch || 'رمزهای عبور مطابقت ندارند',
+                confirmButtonText: 'متوجه شدم',
+                confirmButtonColor: '#3085d6',
+            });
             return;
         }
-        alert(t.alerts.success);
-    };
 
+        setLoading(true);
+
+        try {
+            // Prepare data for API - exclude confirmPassword and add password_confirmation
+            const apiData = {
+                first_name: formData.firstName,
+                last_name: formData.lastName,
+                nationality: formData.nationality,
+                national_id: formData.nationalId,
+                birth_date: formData.birthDate,
+                father_name: formData.fatherName,
+                shenasnameh_number: formData.shenasnamehNumber,
+                referrer_username: formData.referrerUsername,
+                email: formData.email,
+                gender: formData.gender,
+                password: formData.password,
+                password_confirmation: formData.confirmPassword, // Laravel expects this field name
+            };
+
+            const response = await registerUser(apiData);
+
+            // Show success message
+            Swal.fire({
+                icon: 'success',
+                title: 'موفقیت',
+                text: response.message || t.alerts.success || 'کاربر با موفقیت ثبت شد ✅',
+                confirmButtonText: 'ورود به حساب',
+                confirmButtonColor: '#28a745',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Redirect to login page
+                    window.location.href = '/login';
+                }
+            });
+
+        } catch (err) {
+            // Handle validation errors from Laravel
+            try {
+                const errorData = JSON.parse(err.message);
+
+                // Check if errorData has validation errors (not the "errors" wrapper)
+                if (Object.keys(errorData).length > 0 && !errorData.general) {
+                    // Convert all validation errors to a single string
+                    const allErrors = Object.entries(errorData)
+                        .map(([field, messages]) => {
+                            // Map field names to user-friendly names
+                            const fieldNames = {
+                                'first_name': 'نام',
+                                'last_name': 'نام خانوادگی',
+                                'nationality': 'ملیت',
+                                'national_id': 'کد ملی',
+                                'birth_date': 'تاریخ تولد',
+                                'father_name': 'نام پدر',
+                                'shenasnameh_number': 'شماره شناسنامه',
+                                'referrer_username': 'نام کاربری معرف',
+                                'email': 'ایمیل',
+                                'gender': 'جنسیت',
+                                'password': 'رمز عبور',
+                                'password_confirmation': 'تکرار رمز عبور'
+                            };
+
+                            const fieldName = fieldNames[field] || field.replace('_', ' ');
+                            return `${fieldName}: ${messages[0]}`;
+                        })
+                        .join('\n\n');
+
+                    // Show all validation errors in SweetAlert
+                    Swal.fire({
+                        icon: 'error',
+                        title: '<div style="direction: rtl; text-align: right;">خطاهای ثبت نام</div>',
+                        html: `<div style="direction: rtl; text-align: right; font-size: 1rem; line-height: 1.6;">${allErrors.replace(/\n\n/g, '<br><br>')}</div>`,
+                        confirmButtonText: 'متوجه شدم',
+                        confirmButtonColor: '#d33',
+                        customClass: {
+                            popup: 'text-right',
+                            content: 'text-right'
+                        },
+                        width: 500,
+                        padding: '1.5em'
+                    });
+                } else {
+                    // Handle general errors
+                    Swal.fire({
+                        icon: 'error',
+                        title: '<div style="direction: rtl; text-align: right;">خطا</div>',
+                        text: errorData.general || 'ثبت نام با خطا مواجه شد',
+                        confirmButtonText: 'متوجه شدم',
+                        confirmButtonColor: '#d33',
+                        customClass: {
+                            popup: 'text-right',
+                            content: 'text-right'
+                        },
+                        width: 400,
+                        padding: '1.5em'
+                    });
+                }
+            } catch (parseErr) {
+                // Handle JSON parsing errors
+                Swal.fire({
+                    icon: 'error',
+                    title: '<div style="direction: rtl; text-align: right;">خطا</div>',
+                    text: 'ثبت نام با خطا مواجه شد',
+                    confirmButtonText: 'متوجه شدم',
+                    confirmButtonColor: '#d33',
+                    customClass: {
+                        popup: 'text-right',
+                        content: 'text-right'
+                    },
+                    width: 400,
+                    padding: '1.5em'
+                });
+            }
+        }
+        finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <div
             dir="rtl"
-            className="min-h-screen flex flex-col-reverse md:flex-row bg-gradient-to-tr from-slate-50 to-blue-50"
+            className="h-screen overflow-hidden flex flex-col-reverse md:flex-row bg-gradient-to-tr from-slate-50 to-blue-50"
         >
             {/* --- Right side form --- */}
-            <div className="w-full md:w-1/2 flex flex-col justify-center px-6 sm:px-12 md:px-16 py-10 md:py-16">
-                <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-800 mb-3">
+            <div className="w-full overflow-y-scroll md:w-1/2 flex flex-col justify-center px-6 sm:px-12 md:px-16 py-10 md:py-16">
+                <h2 className="text-3xl sm:text-4xl mt-[200px] font-extrabold text-gray-800 mb-3">
                     {t.title}
                 </h2>
                 <p className="text-gray-500 mb-8 text-base sm:text-lg">{t.subtitle}</p>
@@ -145,7 +296,7 @@ const SignUpPage = () => {
                         <InputField
                             id="birthDate"
                             name="birthDate"
-                            type="text" // For a better UX, consider type="date" or a date-picker library
+                            type="date"
                             placeholder={t.fields.birthDate}
                             value={formData.birthDate}
                             onChange={handleChange}
@@ -235,11 +386,23 @@ const SignUpPage = () => {
 
                     <button
                         type="submit"
-                        className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-4 rounded-xl 
-                     shadow-md hover:from-blue-700 hover:to-indigo-700 
-                     focus:ring-4 focus:ring-blue-300 transition-all duration-300"
+                        disabled={loading}
+                        className={`w-full font-bold py-4 rounded-xl shadow-md transition-all duration-300 ${loading
+                            ? 'bg-gray-400 cursor-not-allowed'
+                            : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 focus:ring-4 focus:ring-blue-300'
+                            }`}
                     >
-                        {t.buttonText}
+                        {loading ? (
+                            <span className="flex items-center justify-center">
+                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                {t.loading || 'در حال پردازش...'}
+                            </span>
+                        ) : (
+                            t.buttonText
+                        )}
                     </button>
 
                     {/* --- Login section --- */}
