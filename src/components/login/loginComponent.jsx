@@ -1,8 +1,32 @@
 import React, { useState } from "react";
 import { FaEnvelope, FaLock } from "react-icons/fa";
+import Swal from 'sweetalert2'; // Import SweetAlert2
 import LoginImage from "../../assets/img/Login.jpg";
 import fa from "../../locales/fa.json"; // import Persian localization
 import { useNavigate } from "react-router-dom";
+
+// API function for login
+const loginUser = async (userData) => {
+    const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api'; // Update with your Laravel API URL
+    
+    const response = await fetch(`${API_BASE_URL}/login`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+        },
+        body: JSON.stringify(userData),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(JSON.stringify(data.errors || { general: data.message || 'Login failed' }));
+    }
+
+    return data;
+};
+
 // Access translation object
 const t = fa.loginPage;
 
@@ -37,6 +61,8 @@ const LoginPage = () => {
         rememberMe: false,
     });
 
+    const [loading, setLoading] = useState(false);
+
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
         setFormData((prev) => ({
@@ -45,9 +71,107 @@ const LoginPage = () => {
         }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        navigate("/panel");
+        setLoading(true);
+
+        try {
+            const response = await loginUser({
+                email: formData.email,
+                password: formData.password,
+            });
+
+            // Store token and user data in localStorage/sessionStorage
+            localStorage.setItem('authToken', response.token);
+            localStorage.setItem('user', JSON.stringify(response.user));
+
+            // Show success message
+            Swal.fire({
+                icon: 'success',
+                title: '<div style="direction: rtl; text-align: right;">موفقیت</div>',
+                text: response.message || 'ورود با موفقیت انجام شد ✅',
+                confirmButtonText: 'ادامه',
+                confirmButtonColor: '#28a745',
+                customClass: {
+                    popup: 'text-right',
+                    content: 'text-right'
+                },
+                width: 400,
+                padding: '1.5em'
+            });
+
+            // Navigate to panel
+            navigate("/panel");
+
+        } catch (err) {
+            // Handle validation errors from Laravel
+            try {
+                const errorData = JSON.parse(err.message);
+                
+                if (errorData.errors) {
+                    // Convert all validation errors to a single string
+                    const allErrors = Object.entries(errorData.errors)
+                        .map(([field, messages]) => {
+                            // Map field names to user-friendly names
+                            const fieldNames = {
+                                'email': 'ایمیل',
+                                'password': 'رمز عبور'
+                            };
+                            
+                            const fieldName = fieldNames[field] || field.replace('_', ' ');
+                            return `${fieldName}: ${messages[0]}`;
+                        })
+                        .join('\n\n');
+                    
+                    // Show all validation errors in SweetAlert
+                    Swal.fire({
+                        icon: 'error',
+                        title: '<div style="direction: rtl; text-align: right;">خطاهای ورود</div>',
+                        html: `<div style="direction: rtl; text-align: right; font-size: 1rem; line-height: 1.6;">${allErrors.replace(/\n\n/g, '<br><br>')}</div>`,
+                        confirmButtonText: 'متوجه شدم',
+                        confirmButtonColor: '#d33',
+                        customClass: {
+                            popup: 'text-right',
+                            content: 'text-right'
+                        },
+                        width: 500,
+                        padding: '1.5em'
+                    });
+                } else {
+                    // Handle general errors (like wrong email/password)
+                    Swal.fire({
+                        icon: 'error',
+                        title: '<div style="direction: rtl; text-align: right;">خطا</div>',
+                        text: errorData.general || 'ورود با خطا مواجه شد',
+                        confirmButtonText: 'متوجه شدم',
+                        confirmButtonColor: '#d33',
+                        customClass: {
+                            popup: 'text-right',
+                            content: 'text-right'
+                        },
+                        width: 400,
+                        padding: '1.5em'
+                    });
+                }
+            } catch (parseErr) {
+                // Handle JSON parsing errors
+                Swal.fire({
+                    icon: 'error',
+                    title: '<div style="direction: rtl; text-align: right;">خطا</div>',
+                    text: 'ورود با خطا مواجه شد',
+                    confirmButtonText: 'متوجه شدم',
+                    confirmButtonColor: '#d33',
+                    customClass: {
+                        popup: 'text-right',
+                        content: 'text-right'
+                    },
+                    width: 400,
+                    padding: '1.5em'
+                });
+            }
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -108,11 +232,24 @@ const LoginPage = () => {
                     {/* Submit button */}
                     <button
                         type="submit"
-                        className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-4 rounded-xl 
-              shadow-md hover:from-blue-700 hover:to-indigo-700 
-              focus:ring-4 focus:ring-blue-300 transition-all duration-300"
+                        disabled={loading}
+                        className={`w-full font-bold py-4 rounded-xl shadow-md transition-all duration-300 ${
+                            loading
+                                ? 'bg-gray-400 cursor-not-allowed'
+                                : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 focus:ring-4 focus:ring-blue-300'
+                        }`}
                     >
-                        {t.buttonText}
+                        {loading ? (
+                            <span className="flex items-center justify-center">
+                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                {t.loading || 'در حال پردازش...'}
+                            </span>
+                        ) : (
+                            t.buttonText
+                        )}
                     </button>
 
                     {/* Sign up link */}
