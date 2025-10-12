@@ -162,11 +162,11 @@ const SignUpPage = () => {
     return (
         <div
             dir="rtl"
-            className="min-h-screen flex flex-col-reverse md:flex-row bg-gradient-to-tr from-slate-50 to-blue-50"
+            className="h-screen overflow-hidden flex flex-col-reverse md:flex-row bg-gradient-to-tr from-slate-50 to-blue-50"
         >
             {/* --- Right side form --- */}
-            <div className="w-full md:w-1/2 flex flex-col justify-center px-6 sm:px-12 md:px-16 py-10 md:py-16">
-                <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-800 mb-3">
+            <div className="w-full overflow-y-scroll md:w-1/2 flex flex-col justify-center px-6 sm:px-12 md:px-16 py-10 md:py-16">
+                <h2 className="text-3xl mt-[300px] sm:text-4xl font-extrabold text-gray-800 mb-3">
                     {t.title}
                 </h2>
                 <p className="text-gray-500 mb-8 text-base sm:text-lg">{t.subtitle}</p>
