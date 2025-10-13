@@ -30,7 +30,7 @@ export default function App() {
           {/* other routes inside panel */}
           <Route path="profile" element={<ProfileComponent/>} />
           <Route path="network" element={<NetworkComponent/>} />
-          <Route path="settings" element={<div>تنظیمات</div>} />
+          {/* <Route path="settings" element={<div>تنظیمات</div>} /> */}
         </Route>
       </Routes>
     </div>

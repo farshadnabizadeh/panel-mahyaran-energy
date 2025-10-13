@@ -1,3 +1,4 @@
+import { apiCall } from "./api";
 // Get token from localStorage
 export const getToken = () => {
     return localStorage.getItem('authToken');
@@ -18,4 +19,16 @@ export const logout = () => {
 // Check if user is authenticated
 export const isAuthenticated = () => {
     return !!localStorage.getItem('authToken');
+};
+
+export const logoutUser = async () => {
+  try {
+    await apiCall("/logout", "POST");
+  } catch (error) {
+    console.error("Logout request failed:", error);
+  } finally {
+    localStorage.removeItem("authToken"); // حذف توکن
+    localStorage.removeItem("user");  // حذف اطلاعات کاربر
+    window.location.href = "/login";  // هدایت به صفحه ورود
+  }
 };
