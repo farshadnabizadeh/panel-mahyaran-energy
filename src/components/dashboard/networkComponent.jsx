@@ -1,214 +1,180 @@
-import React, { useState, useEffect } from 'react';
-import { apiCall } from '../../utils/api';
+// src/components/dashboard/networkComponent.jsx
+
+import React, { memo, useMemo } from 'react';
+// تغییرات اصلی اینجاست: import ها از 'reactflow' انجام می‌شود
+import ReactFlow, {
+  Handle,
+  Position,
+  ReactFlowProvider,
+  useNodesState,
+  useEdgesState,
+  Controls,
+  Background,
+} from 'reactflow'; 
+// مسیر CSS نیز تغییر کرده است
+import 'reactflow/dist/style.css'; 
+import dagre from 'dagre';
+
+// =================================================================================
+// 1. داده‌های چارت سازمانی (Nodes & Edges)
+// =================================================================================
+const initialNodes = [
+  {
+    id: '1',
+    type: 'orgNode',
+    data: { name: 'آقای احمدی', position: 'مدیرعامل (CEO)', imageUrl: 'https://randomuser.me/api/portraits/men/1.jpg', isManager: true },
+    position: { x: 0, y: 0 },
+  },
+  {
+    id: '2',
+    type: 'orgNode',
+    data: { name: 'خانم رضایی', position: 'مدیر فنی (CTO)', imageUrl: 'https://randomuser.me/api/portraits/women/2.jpg', isManager: true },
+    position: { x: 0, y: 0 },
+  },
+  {
+    id: '3',
+    type: 'orgNode',
+    data: { name: 'آقای محمدی', position: 'مدیر محصول (CPO)', imageUrl: 'https://randomuser.me/api/portraits/men/3.jpg', isManager: true },
+    position: { x: 0, y: 0 },
+  },
+  {
+    id: '4',
+    type: 'orgNode',
+    data: { name: 'خانم کریمی', position: 'توسعه‌دهنده ارشد', imageUrl: 'https://randomuser.me/api/portraits/women/4.jpg' },
+    position: { x: 0, y: 0 },
+  },
+  {
+    id: '5',
+    type: 'orgNode',
+    data: { name: 'آقای حسینی', position: 'توسعه‌دهنده Backend', imageUrl: 'https://randomuser.me/api/portraits/men/5.jpg' },
+    position: { x: 0, y: 0 },
+  },
+  {
+    id: '6',
+    type: 'orgNode',
+    data: { name: 'خانم نوری', position: 'طراح محصول', imageUrl: 'https://randomuser.me/api/portraits/women/6.jpg' },
+    position: { x: 0, y: 0 },
+  },
+];
+
+const initialEdges = [
+  { id: 'e1-2', source: '1', target: '2', type: 'smoothstep', animated: true },
+  { id: 'e1-3', source: '1', target: '3', type: 'smoothstep', animated: true },
+  { id: 'e2-4', source: '2', target: '4', type: 'smoothstep' },
+  { id: 'e2-5', source: '2', target: '5', type: 'smoothstep' },
+  { id: 'e3-6', source: '3', target: '6', type: 'smoothstep' },
+];
+
+// =================================================================================
+// 2. کامپوننت سفارشی برای نمایش هر نود (عضو سازمان)
+// =================================================================================
+const OrgChartNode = memo(({ data }) => {
+  return (
+    <div style={{
+      background: '#fff',
+      border: `2px solid ${data.isManager ? '#1a192b' : '#ff4f8b'}`,
+      borderRadius: '10px',
+      padding: '15px 20px',
+      width: '220px',
+      textAlign: 'center',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+      fontFamily: 'Vazirmatn, Tahoma, sans-serif'
+    }}>
+      <Handle type="target" position={Position.Top} style={{ background: '#555' }} isConnectable={true} />
+      
+      <div style={{ marginBottom: '10px' }}>
+        <img 
+          src={data.imageUrl || 'https://via.placeholder.com/80'} 
+          alt={data.name}
+          style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #f0f0f0' }}
+        />
+      </div>
+      <div style={{ fontWeight: 'bold', fontSize: '18px', color: '#1a192b' }}>{data.name}</div>
+      <div style={{ color: '#666', fontSize: '14px', marginTop: '5px' }}>{data.position}</div>
+
+      <Handle type="source" position={Position.Bottom} style={{ background: '#555' }} isConnectable={true} />
+    </div>
+  );
+});
+
+// =================================================================================
+// 3. منطق چیدمان خودکار با استفاده از Dagre
+// =================================================================================
+const dagreGraph = new dagre.graphlib.Graph();
+dagreGraph.setDefaultEdgeLabel(() => ({}));
+
+const nodeWidth = 220;
+const nodeHeight = 220;
+
+const getLayoutedElements = (nodes, edges, direction = 'TB') => {
+  const isHorizontal = direction === 'LR';
+  dagreGraph.setGraph({ rankdir: direction });
+
+  nodes.forEach((node) => {
+    dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
+  });
+
+  edges.forEach((edge) => {
+    dagreGraph.setEdge(edge.source, edge.target);
+  });
+
+  dagre.layout(dagreGraph);
+
+  nodes.forEach((node) => {
+    const nodeWithPosition = dagreGraph.node(node.id);
+    node.targetPosition = isHorizontal ? 'left' : 'top';
+    node.sourcePosition = isHorizontal ? 'right' : 'bottom';
+    
+    node.position = {
+      x: nodeWithPosition.x - nodeWidth / 2,
+      y: nodeWithPosition.y - nodeHeight / 2,
+    };
+  });
+
+  return { nodes, edges };
+};
+
+// =================================================================================
+// 4. کامپوننت اصلی که چارت را رندر می‌کند
+// =================================================================================
+const LayoutedFlow = () => {
+  const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
+    initialNodes,
+    initialEdges
+  );
+
+  const [nodes, setNodes, onNodesChange] = useNodesState(layoutedNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(layoutedEdges);
+
+  const nodeTypes = useMemo(() => ({ orgNode: OrgChartNode }), []);
+
+  return (
+    <div style={{ width: '100%', height: '100%', direction: 'ltr' }}>
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        nodeTypes={nodeTypes}
+        fitView
+        proOptions={{ hideAttribution: true }}
+        style={{ background: '#f8f9fa' }}
+      >
+        <Controls />
+        <Background variant="dots" gap={12} size={1} />
+      </ReactFlow>
+    </div>
+  );
+};
 
 const NetworkComponent = () => {
-    const [networkData, setNetworkData] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-
-    useEffect(() => {
-        fetchNetworkData();
-    }, []);
-
-    const fetchNetworkData = async () => {
-        try {
-            setLoading(true);
-            setError(null);
-            
-            // Get current user from localStorage
-            const storedUser = localStorage.getItem('user');
-            if (!storedUser) {
-                throw new Error('کاربر یافت نشد');
-            }
-            
-            const currentUser = JSON.parse(storedUser);
-            
-            // Fetch network data from API
-            // For now, we'll use mock data (replace with actual API call)
-            const mockData = {
-                id: currentUser.id,
-                first_name: currentUser.first_name,
-                last_name: currentUser.last_name,
-                email: currentUser.email,
-                position: "مدیر ارشد",
-                children: [
-                    {
-                        id: 2,
-                        first_name: "پاتریشیا کنوا",
-                        last_name: "",
-                        email: "patricia@example.com",
-                        position: "SR",
-                        children: [
-                            {
-                                id: 4,
-                                first_name: "پاسکال کارتین",
-                                last_name: "",
-                                email: "pascal@example.com",
-                                position: "Project Trainee",
-                                children: []
-                            },
-                            {
-                                id: 5,
-                                first_name: "لیو وانگ",
-                                last_name: "",
-                                email: "liu@example.com",
-                                position: "Senior S/w Engg",
-                                children: [
-                                    {
-                                        id: 7,
-                                        first_name: "هلواتیس ناگی",
-                                        last_name: "",
-                                        email: "helvetis@example.com",
-                                        position: "Project Trainee",
-                                        children: []
-                                    }
-                                ]
-                            }
-                        ]
-                    },
-                    {
-                        id: 3,
-                        first_name: "هِلن ماری",
-                        last_name: "",
-                        email: "helen@example.com",
-                        position: "Project Trainee",
-                        children: [
-                            {
-                                id: 6,
-                                first_name: "خوزه فاواروتی",
-                                last_name: "",
-                                email: "jose@example.com",
-                                position: "S/w Engg",
-                                children: [
-                                    {
-                                        id: 8,
-                                        first_name: "هورست کلوس",
-                                        last_name: "",
-                                        email: "horst@example.com",
-                                        position: "Project Trainee",
-                                        children: []
-                                    }
-                                ]
-                            }
-                        ]
-                    }
-                ]
-            };
-
-            setNetworkData(mockData);
-            
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // Render a single node in the organization chart
-    const renderNode = (node, isRoot = false) => {
-        return (
-            <div key={node.id} className="org-node">
-                <div className={`node-content ${isRoot ? 'root-node' : ''}`}>
-                    <div className="avatar">
-                        <span className="avatar-initial">
-                            {node.first_name?.charAt(0)}{node.last_name?.charAt(0)}
-                        </span>
-                    </div>
-                    <div className="node-info">
-                        <div className="name">{node.first_name} {node.last_name}</div>
-                        <div className="position">{node.position}</div>
-                    </div>
-                </div>
-                
-                {node.children && node.children.length > 0 && (
-                    <div className="children-container">
-                        <div className="children-line"></div>
-                        <div className="children-row">
-                            {node.children.map(child => renderNode(child))}
-                        </div>
-                    </div>
-                )}
-            </div>
-        );
-    };
-
-    if (loading) {
-        return (
-            <div className="w-full min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                    <p className="text-gray-600">در حال بارگذاری شبکه...</p>
-                </div>
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="w-full min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="text-center p-6 bg-red-100 border border-red-400 rounded-lg max-w-md">
-                    <h3 className="text-red-700 font-bold mb-2">خطا</h3>
-                    <p className="text-red-600">{error}</p>
-                    <button 
-                        onClick={fetchNetworkData}
-                        className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-                    >
-                        تلاش مجدد
-                    </button>
-                </div>
-            </div>
-        );
-    }
-
     return (
-        <div className="w-full min-h-screen bg-gray-50">
-            {/* Header */}
-            <div className="bg-white shadow-sm border-b">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                    <h1 className="text-3xl font-bold text-gray-900">شبکه سازمانی</h1>
-                    <p className="mt-1 text-gray-600">ساختار سازمانی شبکه شما</p>
-                </div>
-            </div>
-
-            {/* Main Content */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                    <div className="mb-6">
-                        <h2 className="text-xl font-semibold text-gray-800 mb-2">ساختار سازمانی</h2>
-                        <p className="text-gray-600">نمایش هرمی ساختار سازمانی با تمام سطوح زیرمجموعه</p>
-                    </div>
-
-                    {/* Organization Chart */}
-                    <div className="org-chart-container">
-                        {networkData && renderNode(networkData, true)}
-                    </div>
-
-                    {/* Legend */}
-                    <div className="mt-8 pt-6 border-t border-gray-200">
-                        <h3 className="text-lg font-medium text-gray-900 mb-4">راهنمای رنگ‌ها</h3>
-                        <div className="flex flex-wrap gap-4">
-                            <div className="flex items-center gap-2">
-                                <div className="w-6 h-6 bg-blue-500 rounded"></div>
-                                <span className="text-sm text-gray-700">مدیر ارشد</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-6 h-6 bg-green-500 rounded"></div>
-                                <span className="text-sm text-gray-700">SR</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-6 h-6 bg-yellow-500 rounded"></div>
-                                <span className="text-sm text-gray-700">S/w Engg</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-6 h-6 bg-purple-500 rounded"></div>
-                                <span className="text-sm text-gray-700">Project Trainee</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div style={{width: '100vw', height: '100vh'}}>
+            <ReactFlowProvider>
+                <LayoutedFlow />
+            </ReactFlowProvider>
         </div>
-    );
-};
+    )
+}
 
 export default NetworkComponent;
