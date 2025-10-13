@@ -9,6 +9,7 @@ import ForgotPasswordPage from "./components/forgotPassword/ForgotPasswordPage";
 import PanelLayout from "./components/layout/panelLayout";
 import DashboardHome from "./components/dashboard/dashboardHome";
 import ProfileComponent from "./components/dashboard/profileComponent";
+import NetworkComponent from "./components/dashboard/networkComponent";
 export default function App() {
   return (
     <div className="w-full min-h-screen">
@@ -28,6 +29,7 @@ export default function App() {
           <Route index element={<DashboardHome />} />
           {/* other routes inside panel */}
           <Route path="profile" element={<ProfileComponent/>} />
+          <Route path="network" element={<NetworkComponent/>} />
           <Route path="settings" element={<div>تنظیمات</div>} />
         </Route>
       </Routes>

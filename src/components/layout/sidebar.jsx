@@ -7,6 +7,7 @@ import {
     FaInfoCircle,
     FaSignOutAlt,
     FaTimes,
+    FaNetworkWired,
 } from "react-icons/fa";
 import fa from "../../locales/fa.json";
 
@@ -75,7 +76,17 @@ export default function Sidebar({ isOpen, onClose }) {
                         <FaCog />
                         <span>{t.menu.settings}</span>
                     </NavLink>
-
+                    <NavLink
+                        to="/panel/network"
+                        onClick={onClose}
+                        className={({ isActive }) =>
+                            `flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 transition ${isActive ? "bg-white/20 font-semibold" : ""
+                            }`
+                        }
+                    >
+                        <FaNetworkWired />
+                        <span>{t.menu.network}</span>
+                    </NavLink>
                     <NavLink
                         to="/login"
                         onClick={onClose}
