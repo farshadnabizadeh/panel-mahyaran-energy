@@ -40,7 +40,7 @@ export default function Sidebar({ isOpen, onClose }) {
                 <h1 className="text-2xl font-bold mb-8 text-center">{t.title}</h1>
 
                 <nav className="flex flex-col space-y-4">
-                    <NavLink
+                    {/* <NavLink
                         to="/panel"
                         end
                         onClick={onClose}
@@ -51,7 +51,7 @@ export default function Sidebar({ isOpen, onClose }) {
                     >
                         <FaHome />
                         <span>{t.menu.dashboard}</span>
-                    </NavLink>
+                    </NavLink> */}
 
                     <NavLink
                         to="/panel/profile"
@@ -65,7 +65,7 @@ export default function Sidebar({ isOpen, onClose }) {
                         <span>{t.menu.profile}</span>
                     </NavLink>
 
-                    <NavLink
+                    {/* <NavLink
                         to="/panel/settings"
                         onClick={onClose}
                         className={({ isActive }) =>
@@ -75,7 +75,7 @@ export default function Sidebar({ isOpen, onClose }) {
                     >
                         <FaCog />
                         <span>{t.menu.settings}</span>
-                    </NavLink>
+                    </NavLink> */}
                     <NavLink
                         to="/panel/network"
                         onClick={onClose}
@@ -87,7 +87,7 @@ export default function Sidebar({ isOpen, onClose }) {
                         <FaNetworkWired />
                         <span>{t.menu.network}</span>
                     </NavLink>
-                    <NavLink
+                    {/* <NavLink
                         to="/login"
                         onClick={onClose}
                         className={({ isActive }) =>
@@ -97,7 +97,7 @@ export default function Sidebar({ isOpen, onClose }) {
                     >
                         <FaInfoCircle />
                         <span>{t.menu.about}</span>
-                    </NavLink>
+                    </NavLink> */}
                 </nav>
 
                 <div className="mt-auto border-t border-white/20 pt-4 text-center">
