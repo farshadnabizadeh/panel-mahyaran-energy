@@ -86,15 +86,28 @@ const LayoutedFlow = () => {
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const nodeTypes = useMemo(() => ({ orgNode: OrgChartNode }), []);
 
-  const userId = 2; // ⚠️ فعلاً تستی. بعداً از auth کاربر فعلی بگذارید
+  const [userData, setUserData] = useState(null);
+  const storedUser = localStorage.getItem('user');
 
+  // مقداردهی اولیه userData از localStorage
   useEffect(() => {
-    // دریافت داده از بک‌اند لاراول
+    if (storedUser) {
+      setUserData(JSON.parse(storedUser));
+    }
+  }, []);
+
+  console.log('userData', userData);
+
+  // 🚀 اجرای فراخوانی API فقط وقتی userData آماده است
+  useEffect(() => {
+    if (!userData?.id) return; // جلوگیری از اجرا قبل از آماده‌شدن کاربر
+
+    const userId = userData.id;
+
     apiCall(`/network/${userId}`)
       .then((data) => {
         if (!data || !data.parent) return;
 
-        // ساخت نود والد
         const parentNode = {
           id: String(data.parent.id),
           type: 'orgNode',
@@ -103,10 +116,9 @@ const LayoutedFlow = () => {
             position: 'Parent',
             isManager: true,
           },
-          position: { x: 0, y: 0 }, // موقعیت از طریق dagre تنظیم می‌شود
+          position: { x: 0, y: 0 },
         };
 
-        // ساخت نودهای فرزند
         const childNodes = data.children.map((child) => ({
           id: String(child.id),
           type: 'orgNode',
@@ -118,7 +130,6 @@ const LayoutedFlow = () => {
           position: { x: 0, y: 0 },
         }));
 
-        // ساخت ارتباط‌ها
         const connections = data.children.map((child) => ({
           id: `e${data.parent.id}-${child.id}`,
           source: String(data.parent.id),
@@ -136,7 +147,7 @@ const LayoutedFlow = () => {
         setEdges(layoutedEdges);
       })
       .catch((err) => console.error('Network Error:', err));
-  }, []);
+  }, [userData]); // ← اجرا فقط زمانی که userData تغییر کند
 
   return (
     <div style={{ width: '100%', height: '100%', direction: 'ltr' }}>
@@ -156,6 +167,7 @@ const LayoutedFlow = () => {
     </div>
   );
 };
+
 
 // =================================================================================
 // Wrapper Component
