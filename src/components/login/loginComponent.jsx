@@ -1,37 +1,16 @@
+// src/components/login/loginComponent.jsx
 import React, { useState } from "react";
 import { FaEnvelope, FaLock } from "react-icons/fa";
-import Swal from 'sweetalert2'; // Import SweetAlert2
+import Swal from 'sweetalert2';
 import LoginImage from "../../assets/img/Login.jpg";
-import fa from "../../locales/fa.json"; // import Persian localization
+import fa from "../../locales/fa.json"; // Persian translation file
 import { useNavigate } from "react-router-dom";
+import { apiCall } from "../../utils/api"; // Import the central, robust apiCall utility
 
-// API function for login
-const loginUser = async (userData) => {
-    const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api'; // Update with your Laravel API URL
-    
-    const response = await fetch(`${API_BASE_URL}/login`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-        },
-        body: JSON.stringify(userData),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(JSON.stringify(data.errors || { general: data.message || 'Login failed' }));
-    }
-
-    return data;
-};
-
-// Access translation object
+// Get translation strings for the login page
 const t = fa.loginPage;
 
-// --- SOLUTION: Move InputField outside the LoginPage component ---
-// Also, wrap it with React.memo for performance optimization.
+// Memoized InputField component for performance
 const InputField = React.memo(({ id, name, type, placeholder, value, onChange, icon }) => (
     <div className="relative group">
         <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 group-focus-within:text-blue-500 transition-colors">
@@ -45,24 +24,25 @@ const InputField = React.memo(({ id, name, type, placeholder, value, onChange, i
             value={value}
             onChange={onChange}
             required
-            className="w-full py-3 pr-10 pl-4 rounded-xl bg-gray-50 border border-gray-200 text-gray-800 placeholder-gray-400 
-      focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-300 
-      transition-all duration-200 shadow-sm focus:shadow-md"
+            className="w-full py-3 pr-10 pl-4 rounded-xl bg-gray-50 border border-gray-200 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-300 transition-all duration-200 shadow-sm focus:shadow-md"
         />
     </div>
 ));
 
-// The LoginPage component remains largely the same internally.
 const LoginPage = () => {
     const navigate = useNavigate();
+    
+    // State for form fields
     const [formData, setFormData] = useState({
         email: "",
         password: "",
-        rememberMe: false,
+        rememberMe: false, // Optional: 'remember me' checkbox
     });
-
+    
+    // State to manage loading status for the submit button
     const [loading, setLoading] = useState(false);
 
+    // Generic change handler for all form inputs
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
         setFormData((prev) => ({
@@ -71,110 +51,81 @@ const LoginPage = () => {
         }));
     };
 
+    // Form submission handler
     const handleSubmit = async (e) => {
-        e.preventDefault();
+        e.preventDefault(); // Prevent default form submission
         setLoading(true);
 
         try {
-            const response = await loginUser({
+            // --- BEST PRACTICE: Use the central apiCall function directly ---
+            // This replaces the need for a separate `loginUser` utility function.
+            const response = await apiCall('POST', '/login', {
                 email: formData.email,
                 password: formData.password,
             });
 
-            // Store token and user data in localStorage/sessionStorage
+            // --- ON SUCCESS ---
+            // Store the authentication token and user data in localStorage
             localStorage.setItem('authToken', response.token);
             localStorage.setItem('user', JSON.stringify(response.user));
 
-            // Show success message
+            // Show a success message to the user
             Swal.fire({
                 icon: 'success',
-                title: '<div style="direction: rtl; text-align: right;">موفقیت</div>',
-                text: response.message || 'ورود با موفقیت انجام شد ✅',
+                title: 'موفقیت',
+                text: response.message, // Use the success message directly from the API
                 confirmButtonText: 'ادامه',
                 confirmButtonColor: '#28a745',
-                customClass: {
-                    popup: 'text-right',
-                    content: 'text-right'
-                },
-                width: 400,
-                padding: '1.5em'
+                customClass: { popup: 'rtl-popup', content: 'rtl-content' },
             });
 
-            // Navigate to panel
+            // Redirect to the user panel/dashboard
             navigate("/panel");
 
-        } catch (err) {
-            // Handle validation errors from Laravel
-            try {
-                const errorData = JSON.parse(err.message);
+        } catch (err) { 
+            // --- ROBUST ERROR HANDLING ---
+            // 'err' is the custom error object thrown by our `apiCall` function.
+            // It contains 'status', 'message', and optionally 'errors'.
+
+            if (err.status === 422 && err.errors) {
+                // Case 1: Validation errors (HTTP 422) from Laravel
+                // Combine all validation error messages into a single HTML string
+                const allErrors = Object.values(err.errors).map(messages => messages[0]).join('<br>');
                 
-                if (errorData.errors) {
-                    // Convert all validation errors to a single string
-                    const allErrors = Object.entries(errorData.errors)
-                        .map(([field, messages]) => {
-                            // Map field names to user-friendly names
-                            const fieldNames = {
-                                'email': 'ایمیل',
-                                'password': 'رمز عبور'
-                            };
-                            
-                            const fieldName = fieldNames[field] || field.replace('_', ' ');
-                            return `${fieldName}: ${messages[0]}`;
-                        })
-                        .join('\n\n');
-                    
-                    // Show all validation errors in SweetAlert
-                    Swal.fire({
-                        icon: 'error',
-                        title: '<div style="direction: rtl; text-align: right;">خطاهای ورود</div>',
-                        html: `<div style="direction: rtl; text-align: right; font-size: 1rem; line-height: 1.6;">${allErrors.replace(/\n\n/g, '<br><br>')}</div>`,
-                        confirmButtonText: 'متوجه شدم',
-                        confirmButtonColor: '#d33',
-                        customClass: {
-                            popup: 'text-right',
-                            content: 'text-right'
-                        },
-                        width: 500,
-                        padding: '1.5em'
-                    });
-                } else {
-                    // Handle general errors (like wrong email/password)
-                    Swal.fire({
-                        icon: 'error',
-                        title: '<div style="direction: rtl; text-align: right;">خطا</div>',
-                        text: errorData.general || 'ورود با خطا مواجه شد',
-                        confirmButtonText: 'متوجه شدم',
-                        confirmButtonColor: '#d33',
-                        customClass: {
-                            popup: 'text-right',
-                            content: 'text-right'
-                        },
-                        width: 400,
-                        padding: '1.5em'
-                    });
-                }
-            } catch (parseErr) {
-                // Handle JSON parsing errors
                 Swal.fire({
                     icon: 'error',
-                    title: '<div style="direction: rtl; text-align: right;">خطا</div>',
-                    text: 'ورود با خطا مواجه شد',
+                    title: 'خطای اعتبارسنجی',
+                    html: `<div class="rtl-content">${allErrors}</div>`, // Display as HTML
                     confirmButtonText: 'متوجه شدم',
                     confirmButtonColor: '#d33',
-                    customClass: {
-                        popup: 'text-right',
-                        content: 'text-right'
-                    },
-                    width: 400,
-                    padding: '1.5em'
+                    customClass: { popup: 'rtl-popup' },
+                });
+
+            } else {
+                // Case 2: Other errors (e.g., 401 Unauthorized, 500 Server Error, Network Error)
+                // The 'err.message' will contain the specific message from the API or a generic network error message.
+                Swal.fire({
+                    icon: 'error',
+                    title: 'خطا در ورود',
+                    text: err.message, // e.g., "ایمیل یا رمز عبور اشتباه است"
+                    confirmButtonText: 'متوجه شدم',
+                    confirmButtonColor: '#d33',
+                    customClass: { popup: 'rtl-popup', content: 'rtl-content' },
                 });
             }
         } finally {
-            setLoading(false);
+            // This block runs regardless of success or failure
+            setLoading(false); // Reset the loading state of the button
         }
     };
 
     return (
+        // The JSX for the component layout. This part remains unchanged.
+        // NOTE: Add the following CSS to your main stylesheet (e.g., index.css) for proper RTL display in SweetAlert.
+        /*
+            .rtl-popup { direction: rtl; }
+            .rtl-content { direction: rtl; text-align: right; }
+        */
         <div
             dir="rtl"
             className="min-h-screen flex flex-col-reverse md:flex-row bg-gradient-to-tr from-slate-50 to-blue-50"
@@ -187,7 +138,7 @@ const LoginPage = () => {
                 <p className="text-gray-500 mb-8 text-base sm:text-lg">{t.subtitle}</p>
 
                 <form onSubmit={handleSubmit} className="space-y-8">
-                    {/* Email */}
+                    {/* Email Input */}
                     <InputField
                         id="email"
                         name="email"
@@ -198,7 +149,7 @@ const LoginPage = () => {
                         icon={<FaEnvelope />}
                     />
 
-                    {/* Password */}
+                    {/* Password Input */}
                     <InputField
                         id="password"
                         name="password"
@@ -211,7 +162,7 @@ const LoginPage = () => {
 
                     {/* Remember Me & Forgot Password */}
                     <div className="flex items-center justify-between text-sm text-gray-600">
-                        <label className="flex items-center gap-2">
+                        <label className="flex items-center gap-2 cursor-pointer">
                             <input
                                 type="checkbox"
                                 name="rememberMe"
@@ -229,15 +180,14 @@ const LoginPage = () => {
                         </a>
                     </div>
 
-                    {/* Submit button */}
+                    {/* Submit button with loading state */}
                     <button
                         type="submit"
                         disabled={loading}
-                        className={`w-full font-bold py-4 rounded-xl shadow-md transition-all duration-300 ${
-                            loading
+                        className={`w-full font-bold py-4 rounded-xl shadow-md transition-all duration-300 ${loading
                                 ? 'bg-gray-400 cursor-not-allowed'
                                 : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 focus:ring-4 focus:ring-blue-300'
-                        }`}
+                            }`}
                     >
                         {loading ? (
                             <span className="flex items-center justify-center">

@@ -1,271 +1,259 @@
-import React, { useState, useEffect } from 'react';
+// src/components/ProfileComponent.jsx
+import React, { useState, useEffect, useMemo } from 'react';
 import { apiCall } from '../../utils/api';
+import { FaUser, FaEnvelope, FaBirthdayCake, FaFlag, FaIdCard, FaLock, FaSave, FaTimes, FaEdit, FaSpinner, FaCheckCircle, FaExclamationTriangle, FaInfoCircle } from 'react-icons/fa';
+import Swal from 'sweetalert2';
 
+// --- Helper Component: InputField with Icon ---
+// A reusable and enhanced input field component for our form
+const InputField = React.memo(({ icon, name, label, value, onChange, error, type = "text", disabled = false }) => (
+    <div className="relative">
+        <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+        <div className="relative group">
+            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 pointer-events-none group-focus-within:text-indigo-600 transition-colors">
+                {icon}
+            </span>
+            <input
+                type={type}
+                id={name}
+                name={name}
+                value={value || ''}
+                onChange={onChange}
+                disabled={disabled}
+                className={`w-full py-2.5 pl-10 pr-4 rounded-lg bg-gray-50 border text-gray-800 transition-all duration-200
+                    ${disabled ? 'cursor-not-allowed bg-gray-100 text-gray-500' : 'focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200'}
+                    ${error ? 'border-red-400 focus:ring-red-200' : 'border-gray-300'}`
+                }
+            />
+        </div>
+        {error && <p className="mt-1.5 text-xs text-red-600">{error[0]}</p>}
+    </div>
+));
+
+// --- Main Profile Component ---
 const ProfileComponent = () => {
+    // --- State Management ---
     const [userData, setUserData] = useState(null);
+    const [formData, setFormData] = useState({});
+    const [passwordData, setPasswordData] = useState({
+        current_password: '',
+        new_password: '',
+        new_password_confirmation: ''
+    });
+
+    const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const [submittingProfile, setSubmittingProfile] = useState(false);
+    const [submittingPassword, setSubmittingPassword] = useState(false);
 
-    useEffect(() => {
-        fetchUserData();
-    }, []);
+    const [fetchError, setFetchError] = useState(null);
+    const [validationErrors, setValidationErrors] = useState({});
 
+    // --- Data Fetching ---
     const fetchUserData = async () => {
         try {
             setLoading(true);
-            setError(null);
-            
-            // Get user data from localStorage (the user data stored during login)
-            const storedUser = localStorage.getItem('user');
-            if (storedUser) {
-                setUserData(JSON.parse(storedUser));
-            }
-            
+            setFetchError(null);
+            const response = await apiCall('GET', '/user');
+            setUserData(response);
+            setFormData(response);
+            localStorage.setItem('user', JSON.stringify(response));
         } catch (err) {
-            setError(err.message);
+            setFetchError(err.message || 'خطا در دریافت اطلاعات. لطفاً دوباره وارد شوید.');
         } finally {
             setLoading(false);
         }
     };
 
+    useEffect(() => {
+        fetchUserData();
+    }, []);
+
+    // Memoize the initial character for the avatar
+    const userInitial = useMemo(() => {
+        return userData?.first_name?.charAt(0).toUpperCase() || <FaUser />;
+    }, [userData]);
+
+    // --- Event Handlers ---
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handlePasswordChange = (e) => {
+        const { name, value } = e.target;
+        setPasswordData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleEditToggle = () => {
+        if (isEditing) {
+            // On cancel, revert form data and clear errors
+            setFormData(userData);
+            setValidationErrors({});
+        }
+        setIsEditing(!isEditing);
+    };
+
+    const showToast = (icon, title) => {
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.onmouseenter = Swal.stopTimer;
+                toast.onmouseleave = Swal.resumeTimer;
+            }
+        });
+        Toast.fire({ icon, title });
+    };
+
+    const handleProfileSubmit = async (e) => {
+        e.preventDefault();
+        setSubmittingProfile(true);
+        setValidationErrors({});
+
+        const changedData = Object.keys(formData).reduce((acc, key) => {
+            if (formData[key] !== userData[key]) {
+                acc[key] = formData[key];
+            }
+            return acc;
+        }, {});
+
+        if (Object.keys(changedData).length === 0) {
+            showToast('info', 'هیچ تغییری برای ذخیره وجود ندارد.');
+            setSubmittingProfile(false);
+            setIsEditing(false);
+            return;
+        }
+
+        try {
+            const response = await apiCall('PUT', '/user/profile', changedData);
+            setUserData(response.user);
+            setFormData(response.user);
+            localStorage.setItem('user', JSON.stringify(response.user));
+            showToast('success', response.message);
+            setIsEditing(false);
+        } catch (err) {
+            if (err.status === 422 && err.errors) {
+                setValidationErrors(err.errors);
+                showToast('error', 'لطفاً خطاهای فرم را برطرف کنید.');
+            } else {
+                showToast('error', err.message || 'یک خطای پیش‌بینی نشده رخ داد.');
+            }
+        } finally {
+            setSubmittingProfile(false);
+        }
+    };
+
+    const handlePasswordSubmit = async (e) => {
+        e.preventDefault();
+        setSubmittingPassword(true);
+        setValidationErrors({});
+
+        try {
+            const response = await apiCall('PUT', '/user/profile', passwordData);
+            showToast('success', response.message);
+            setPasswordData({ current_password: '', new_password: '', new_password_confirmation: '' });
+        } catch (err) {
+            if (err.status === 422 && err.errors) {
+                setValidationErrors(err.errors);
+                showToast('error', 'لطفاً خطاهای فرم را برطرف کنید.');
+            } else {
+                showToast('error', err.message || 'یک خطای پیش‌بینی نشده رخ داد.');
+            }
+        } finally {
+            setSubmittingPassword(false);
+        }
+    };
+    
+    // --- Render Logic ---
     if (loading) {
         return (
-            <div className="w-full min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                    <p className="text-gray-600">در حال بارگذاری اطلاعات...</p>
-                </div>
+            <div className="flex items-center justify-center min-h-screen bg-gray-50">
+                <FaSpinner className="animate-spin text-4xl text-indigo-600" />
             </div>
         );
     }
 
-    if (error) {
+    if (fetchError) {
         return (
-            <div className="w-full min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="text-center p-6 bg-red-100 border border-red-400 rounded-lg max-w-md">
-                    <h3 className="text-red-700 font-bold mb-2">خطا</h3>
-                    <p className="text-red-600">{error}</p>
-                    <button 
-                        onClick={fetchUserData}
-                        className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-                    >
-                        تلاش مجدد
-                    </button>
-                </div>
+            <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 text-red-600">
+                <FaExclamationTriangle className="text-5xl mb-4" />
+                <p className="text-lg">{fetchError}</p>
+                <button onClick={() => window.location.reload()} className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">تلاش مجدد</button>
             </div>
         );
     }
 
-    if (!userData) {
-        return (
-            <div className="w-full min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="text-center p-6 bg-yellow-100 border border-yellow-400 rounded-lg">
-                    <p className="text-yellow-700">اطلاعات کاربری یافت نشد</p>
-                    <button 
-                        onClick={fetchUserData}
-                        className="mt-4 px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 transition-colors"
-                    >
-                        بارگذاری مجدد
-                    </button>
-                </div>
-            </div>
-        );
-    }
+    if (!userData) return null; // Or a "not found" message
 
     return (
-        <div className="w-full min-h-screen bg-gray-50">
-            {/* Header */}
-            <div className="bg-white shadow-sm border-b">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                    <h1 className="text-3xl font-bold text-gray-900">پروفایل کاربر</h1>
-                    <p className="mt-1 text-gray-600">اطلاعات شخصی و حساب کاربری شما</p>
-                </div>
-            </div>
-
-            {/* Main Content */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Profile Card */}
-                    <div className="lg:col-span-1">
-                        <div className="bg-white rounded-lg shadow-sm p-6">
-                            <div className="text-center">
-                                <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <span className="text-3xl font-bold text-blue-600">
-                                        {userData.first_name?.charAt(0)}{userData.last_name?.charAt(0)}
-                                    </span>
-                                </div>
-                                <h2 className="text-xl font-semibold text-gray-900">
-                                    {userData.first_name} {userData.last_name}
-                                </h2>
-                                <p className="text-gray-600">{userData.email}</p>
-                                <div className="mt-4 flex justify-center space-x-2 space-x-reverse">
-                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                        {userData.nationality === 'iran' ? 'ایرانی' : userData.nationality}
-                                    </span>
-                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                        {userData.gender === 'male' ? 'مرد' : 
-                                         userData.gender === 'female' ? 'زن' : 
-                                         userData.gender}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Quick Actions */}
-                        <div className="mt-6 bg-white rounded-lg shadow-sm p-6">
-                            <h3 className="text-lg font-medium text-gray-900 mb-4">عملیات سریع</h3>
-                            <div className="space-y-3">
-                                <button className="w-full text-right text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md transition-colors">
-                                    ویرایش پروفایل
-                                </button>
-                                <button className="w-full text-right text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md transition-colors">
-                                    تغییر رمز عبور
-                                </button>
-                                <button className="w-full text-right text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md transition-colors">
-                                    تنظیمات امنیتی
-                                </button>
-                            </div>
+        <div dir="rtl" className="w-full min-h-screen bg-gray-100 p-4 sm:p-6 md:p-8">
+            <div className="max-w-4xl mx-auto">
+                {/* --- User Header Card --- */}
+                <div className="bg-white rounded-xl shadow-md p-6 mb-8 flex items-center space-x-4 space-x-reverse">
+                    <div className="flex-shrink-0">
+                        <div className="h-16 w-16 rounded-full bg-indigo-100 flex items-center justify-center text-3xl font-bold text-indigo-600">
+                            {userInitial}
                         </div>
                     </div>
-
-                    {/* Personal Information */}
-                    <div className="lg:col-span-2">
-                        <div className="bg-white rounded-lg shadow-sm p-6">
-                            <h3 className="text-lg font-medium text-gray-900 mb-6">اطلاعات شخصی</h3>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {/* Personal Info */}
-                                <div className="space-y-4">
-                                    <h4 className="font-medium text-gray-700 border-b pb-2">اطلاعات پایه</h4>
-                                    
-                                    <div className="flex justify-between py-2">
-                                        <span className="font-medium text-gray-600">نام:</span>
-                                        <span className="text-gray-900">{userData.first_name || 'ندارد'}</span>
-                                    </div>
-                                    
-                                    <div className="flex justify-between py-2">
-                                        <span className="font-medium text-gray-600">نام خانوادگی:</span>
-                                        <span className="text-gray-900">{userData.last_name || 'ندارد'}</span>
-                                    </div>
-                                    
-                                    <div className="flex justify-between py-2">
-                                        <span className="font-medium text-gray-600">ایمیل:</span>
-                                        <span className="text-gray-900">{userData.email || 'ندارد'}</span>
-                                    </div>
-                                    
-                                    <div className="flex justify-between py-2">
-                                        <span className="font-medium text-gray-600">ملیت:</span>
-                                        <span className="text-gray-900">{userData.nationality || 'ندارد'}</span>
-                                    </div>
-                                    
-                                    <div className="flex justify-between py-2">
-                                        <span className="font-medium text-gray-600">جنسیت:</span>
-                                        <span className="text-gray-900">
-                                            {userData.gender === 'male' ? 'مرد' : 
-                                             userData.gender === 'female' ? 'زن' : 
-                                             userData.gender || 'ندارد'}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                {/* Additional Info - Only show if they have values */}
-                                <div className="space-y-4">
-                                    <h4 className="font-medium text-gray-700 border-b pb-2">اطلاعات تکمیلی</h4>
-                                    
-                                    {userData.national_id && (
-                                        <div className="flex justify-between py-2">
-                                            <span className="font-medium text-gray-600">کد ملی:</span>
-                                            <span className="text-gray-900">{userData.national_id}</span>
-                                        </div>
-                                    )}
-                                    
-                                    {userData.birth_date && (
-                                        <div className="flex justify-between py-2">
-                                            <span className="font-medium text-gray-600">تاریخ تولد:</span>
-                                            <span className="text-gray-900">{userData.birth_date}</span>
-                                        </div>
-                                    )}
-                                    
-                                    {userData.father_name && (
-                                        <div className="flex justify-between py-2">
-                                            <span className="font-medium text-gray-600">نام پدر:</span>
-                                            <span className="text-gray-900">{userData.father_name}</span>
-                                        </div>
-                                    )}
-                                    
-                                    {userData.shenasnameh_number && (
-                                        <div className="flex justify-between py-2">
-                                            <span className="font-medium text-gray-600">شماره شناسنامه:</span>
-                                            <span className="text-gray-900">{userData.shenasnameh_number}</span>
-                                        </div>
-                                    )}
-                                    
-                                    {userData.referrer_username && (
-                                        <div className="flex justify-between py-2">
-                                            <span className="font-medium text-gray-600">معرف:</span>
-                                            <span className="text-gray-900">{userData.referrer_username}</span>
-                                        </div>
-                                    )}
-                                    
-                                    {/* Show "No additional info" if none of the optional fields exist */}
-                                    {!userData.national_id && 
-                                     !userData.birth_date && 
-                                     !userData.father_name && 
-                                     !userData.shenasnameh_number && 
-                                     !userData.referrer_username && (
-                                        <div className="text-center py-4 text-gray-500 italic">
-                                            اطلاعات اضافی موجود نیست
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Action Buttons */}
-                            <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-end">
-                                <button 
-                                    onClick={fetchUserData}
-                                    className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors font-medium"
-                                >
-                                    تازه‌سازی
-                                </button>
-                                <button className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium">
-                                    ویرایش اطلاعات
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Additional Sections */}
-                        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* Account Security */}
-                            <div className="bg-white rounded-lg shadow-sm p-6">
-                                <h3 className="text-lg font-medium text-gray-900 mb-4">امنیت حساب</h3>
-                                <div className="space-y-3">
-                                    <div className="flex justify-between items-center py-2">
-                                        <span className="text-gray-600">رمز عبور</span>
-                                        <span className="text-green-600 text-sm">به‌روز</span>
-                                    </div>
-                                    <div className="flex justify-between items-center py-2">
-                                        <span className="text-gray-600">احراز هویت دو مرحله‌ای</span>
-                                        <span className="text-red-600 text-sm">غیرفعال</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Recent Activity */}
-                            <div className="bg-white rounded-lg shadow-sm p-6">
-                                <h3 className="text-lg font-medium text-gray-900 mb-4">فعالیت‌های اخیر</h3>
-                                <div className="space-y-3">
-                                    <div className="text-sm text-gray-600">
-                                        آخرین ورود: امروز در 14:30
-                                    </div>
-                                    <div className="text-sm text-gray-600">
-                                        آخرین تغییر اطلاعات: 2 روز پیش
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-800">{`${userData.first_name || ''} ${userData.last_name || ''}`}</h1>
+                        <p className="text-sm text-gray-500">{userData.email}</p>
                     </div>
                 </div>
+
+                {/* --- Personal Information Form --- */}
+                <form onSubmit={handleProfileSubmit} className="bg-white rounded-xl shadow-md p-6 md:p-8 mb-8">
+                    <div className="flex justify-between items-center pb-4 border-b border-gray-200 mb-6">
+                        <h3 className="text-xl font-semibold text-gray-800">اطلاعات شخصی</h3>
+                        {!isEditing ? (
+                            <button type="button" onClick={handleEditToggle} className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                <FaEdit />
+                                <span>ویرایش</span>
+                            </button>
+                        ) : (
+                            <div className="flex items-center gap-3">
+                                <button type="submit" disabled={submittingProfile} className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed">
+                                    {submittingProfile ? <FaSpinner className="animate-spin" /> : <FaSave />}
+                                    <span>{submittingProfile ? 'در حال ذخیره...' : 'ذخیره'}</span>
+                                </button>
+                                <button type="button" onClick={handleEditToggle} className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg text-gray-700 bg-gray-200 hover:bg-gray-300">
+                                    <FaTimes />
+                                    <span>لغو</span>
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
+                        <InputField icon={<FaUser />} name="first_name" label="نام" value={formData.first_name} onChange={handleInputChange} error={validationErrors.first_name} disabled={!isEditing} />
+                        <InputField icon={<FaUser />} name="last_name" label="نام خانوادگی" value={formData.last_name} onChange={handleInputChange} error={validationErrors.last_name} disabled={!isEditing} />
+                        <InputField icon={<FaEnvelope />} name="email" label="ایمیل" type="email" value={formData.email} onChange={handleInputChange} error={validationErrors.email} disabled={!isEditing} />
+                        <InputField icon={<FaBirthdayCake />} name="birth_date" label="تاریخ تولد" type="date" value={formData.birth_date} onChange={handleInputChange} error={validationErrors.birth_date} disabled={!isEditing} />
+                        <InputField icon={<FaFlag />} name="nationality" label="ملیت" value={formData.nationality} onChange={handleInputChange} error={validationErrors.nationality} disabled={!isEditing} />
+                        <InputField icon={<FaIdCard />} name="national_id" label="کد ملی" value={formData.national_id} onChange={handleInputChange} error={validationErrors.national_id} disabled={!isEditing} />
+                    </div>
+                </form>
+
+                {/* --- Change Password Form --- */}
+                <form onSubmit={handlePasswordSubmit} className="bg-white rounded-xl shadow-md p-6 md:p-8">
+                    <h3 className="text-xl font-semibold text-gray-800 pb-4 border-b border-gray-200 mb-6">تغییر رمز عبور</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
+                        <InputField icon={<FaLock />} name="current_password" label="رمز عبور فعلی" type="password" value={passwordData.current_password} onChange={handlePasswordChange} error={validationErrors.current_password} />
+                        <div></div> {/* Spacer for grid layout */}
+                        <InputField icon={<FaLock />} name="new_password" label="رمز عبور جدید" type="password" value={passwordData.new_password} onChange={handlePasswordChange} error={validationErrors.new_password} />
+                        <InputField icon={<FaLock />} name="new_password_confirmation" label="تکرار رمز عبور جدید" type="password" value={passwordData.new_password_confirmation} onChange={handlePasswordChange} error={validationErrors.new_password_confirmation} />
+                    </div>
+                    <div className="mt-8 flex justify-end">
+                        <button type="submit" disabled={submittingPassword} className="flex items-center gap-2 w-full sm:w-auto px-6 py-2.5 font-semibold rounded-lg text-white bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors">
+                            {submittingPassword ? <FaSpinner className="animate-spin" /> : <FaSave />}
+                            <span>{submittingPassword ? 'در حال بررسی...' : 'تغییر رمز عبور'}</span>
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     );
