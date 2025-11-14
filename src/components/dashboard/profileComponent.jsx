@@ -167,7 +167,7 @@ const ProfileComponent = () => {
             setSubmittingPassword(false);
         }
     };
-    
+
     // --- Render Logic ---
     if (loading) {
         return (
@@ -188,7 +188,6 @@ const ProfileComponent = () => {
     }
 
     if (!userData) return null; // Or a "not found" message
-
     return (
         <div dir="rtl" className="w-full min-h-screen bg-gray-100 p-4 sm:p-6 md:p-8">
             <div className="max-w-4xl mx-auto">
@@ -201,7 +200,8 @@ const ProfileComponent = () => {
                     </div>
                     <div>
                         <h1 className="text-2xl font-bold text-gray-800">{`${userData.first_name || ''} ${userData.last_name || ''}`}</h1>
-                        <p className="text-sm text-gray-500">{userData.email}</p>
+                        <p className="text-sm text-gray-500 mt-2">{userData.email}</p>
+                        <p className="text-sm text-gray-500 mt-2"><span>نام معرف : </span>{userData.referrer_username}</p>
                     </div>
                 </div>
 
@@ -227,7 +227,7 @@ const ProfileComponent = () => {
                             </div>
                         )}
                     </div>
-                    
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
                         <InputField icon={<FaUser />} name="first_name" label="نام" value={formData.first_name} onChange={handleInputChange} error={validationErrors.first_name} disabled={!isEditing} />
                         <InputField icon={<FaUser />} name="last_name" label="نام خانوادگی" value={formData.last_name} onChange={handleInputChange} error={validationErrors.last_name} disabled={!isEditing} />
