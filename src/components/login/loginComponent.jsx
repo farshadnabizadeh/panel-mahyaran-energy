@@ -1,16 +1,14 @@
 // src/components/login/loginComponent.jsx
 import React, { useState } from "react";
-import { FaEnvelope, FaLock } from "react-icons/fa";
+import { FaUser, FaLock } from "react-icons/fa"; // Changed FaEnvelope to FaUser
 import Swal from 'sweetalert2';
 import LoginImage from "../../assets/img/Login.jpg";
-import fa from "../../locales/fa.json"; // Persian translation file
+import fa from "../../locales/fa.json";
 import { useNavigate } from "react-router-dom";
-import { apiCall } from "../../utils/api"; // Import the central, robust apiCall utility
+import { apiCall } from "../../utils/api";
 
-// Get translation strings for the login page
 const t = fa.loginPage;
 
-// Memoized InputField component for performance
 const InputField = React.memo(({ id, name, type, placeholder, value, onChange, icon }) => (
     <div className="relative group">
         <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 group-focus-within:text-blue-500 transition-colors">
@@ -32,17 +30,15 @@ const InputField = React.memo(({ id, name, type, placeholder, value, onChange, i
 const LoginPage = () => {
     const navigate = useNavigate();
     
-    // State for form fields
+    // 1. Change email to username in state
     const [formData, setFormData] = useState({
-        email: "",
+        username: "", 
         password: "",
-        rememberMe: false, // Optional: 'remember me' checkbox
+        rememberMe: false,
     });
     
-    // State to manage loading status for the submit button
     const [loading, setLoading] = useState(false);
 
-    // Generic change handler for all form inputs
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
         setFormData((prev) => ({
@@ -51,86 +47,64 @@ const LoginPage = () => {
         }));
     };
 
-    // Form submission handler
     const handleSubmit = async (e) => {
-        e.preventDefault(); // Prevent default form submission
+        e.preventDefault();
         setLoading(true);
 
         try {
-            // --- BEST PRACTICE: Use the central apiCall function directly ---
-            // This replaces the need for a separate `loginUser` utility function.
+            // 2. Send username instead of email to API
             const response = await apiCall('POST', '/login', {
-                email: formData.email,
+                username: formData.username,
                 password: formData.password,
             });
 
-            // --- ON SUCCESS ---
-            // Store the authentication token and user data in localStorage
             localStorage.setItem('authToken', response.token);
             localStorage.setItem('user', JSON.stringify(response.user));
 
-            // Show a success message to the user
             Swal.fire({
                 icon: 'success',
                 title: 'موفقیت',
-                text: response.message, // Use the success message directly from the API
+                text: response.message,
                 confirmButtonText: 'ادامه',
                 confirmButtonColor: '#28a745',
                 customClass: { popup: 'rtl-popup', content: 'rtl-content' },
             });
 
-            // Redirect to the user panel/dashboard
             navigate("/panel");
 
         } catch (err) { 
-            // --- ROBUST ERROR HANDLING ---
-            // 'err' is the custom error object thrown by our `apiCall` function.
-            // It contains 'status', 'message', and optionally 'errors'.
-
             if (err.status === 422 && err.errors) {
-                // Case 1: Validation errors (HTTP 422) from Laravel
-                // Combine all validation error messages into a single HTML string
                 const allErrors = Object.values(err.errors).map(messages => messages[0]).join('<br>');
                 
                 Swal.fire({
                     icon: 'error',
                     title: 'خطای اعتبارسنجی',
-                    html: `<div class="rtl-content">${allErrors}</div>`, // Display as HTML
+                    html: `<div class="rtl-content">${allErrors}</div>`,
                     confirmButtonText: 'متوجه شدم',
                     confirmButtonColor: '#d33',
                     customClass: { popup: 'rtl-popup' },
                 });
 
             } else {
-                // Case 2: Other errors (e.g., 401 Unauthorized, 500 Server Error, Network Error)
-                // The 'err.message' will contain the specific message from the API or a generic network error message.
                 Swal.fire({
                     icon: 'error',
                     title: 'خطا در ورود',
-                    text: err.message, // e.g., "ایمیل یا رمز عبور اشتباه است"
+                    text: err.message,
                     confirmButtonText: 'متوجه شدم',
                     confirmButtonColor: '#d33',
                     customClass: { popup: 'rtl-popup', content: 'rtl-content' },
                 });
             }
         } finally {
-            // This block runs regardless of success or failure
-            setLoading(false); // Reset the loading state of the button
+            setLoading(false);
         }
     };
 
     return (
-        // The JSX for the component layout. This part remains unchanged.
-        // NOTE: Add the following CSS to your main stylesheet (e.g., index.css) for proper RTL display in SweetAlert.
-        /*
-            .rtl-popup { direction: rtl; }
-            .rtl-content { direction: rtl; text-align: right; }
-        */
         <div
             dir="rtl"
             className="min-h-screen flex flex-col-reverse md:flex-row bg-gradient-to-tr from-slate-50 to-blue-50"
         >
-            {/* Right section — Login form */}
             <div className="w-full md:w-1/2 flex flex-col justify-center px-6 sm:px-12 md:px-16 py-10 md:py-16">
                 <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-800 mb-3">
                     {t.title}
@@ -138,18 +112,18 @@ const LoginPage = () => {
                 <p className="text-gray-500 mb-8 text-base sm:text-lg">{t.subtitle}</p>
 
                 <form onSubmit={handleSubmit} className="space-y-8">
-                    {/* Email Input */}
+                    
+                    {/* 3. Username Input Field */}
                     <InputField
-                        id="email"
-                        name="email"
-                        type="email"
-                        placeholder={t.fields.email}
-                        value={formData.email}
+                        id="username"
+                        name="username" 
+                        type="text" 
+                        placeholder="نام کاربری" // Or use t.fields.username if you add it to JSON
+                        value={formData.username}
                         onChange={handleChange}
-                        icon={<FaEnvelope />}
+                        icon={<FaUser />} 
                     />
 
-                    {/* Password Input */}
                     <InputField
                         id="password"
                         name="password"
@@ -160,7 +134,6 @@ const LoginPage = () => {
                         icon={<FaLock />}
                     />
 
-                    {/* Remember Me & Forgot Password */}
                     <div className="flex items-center justify-between text-sm text-gray-600">
                         <label className="flex items-center gap-2 cursor-pointer">
                             <input
@@ -180,7 +153,6 @@ const LoginPage = () => {
                         </a>
                     </div>
 
-                    {/* Submit button with loading state */}
                     <button
                         type="submit"
                         disabled={loading}
@@ -202,7 +174,6 @@ const LoginPage = () => {
                         )}
                     </button>
 
-                    {/* Sign up link */}
                     <div className="text-center mt-6">
                         <span className="text-gray-600">{t.noAccount}</span>
                         <a
@@ -215,7 +186,6 @@ const LoginPage = () => {
                 </form>
             </div>
 
-            {/* Left section — Image */}
             <div className="w-full md:w-1/2 h-64 sm:h-72 md:h-screen relative">
                 <img
                     className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-500"
