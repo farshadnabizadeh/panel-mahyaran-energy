@@ -16,7 +16,7 @@ const ForgotPasswordPage = () => {
     return (
         <div
             dir="rtl"
-            className="min-h-screen flex flex-col-reverse md:flex-row bg-gradient-to-tr from-slate-50 to-blue-50"
+            className="flex flex-col-reverse md:flex-row bg-gradient-to-tr from-slate-50 to-blue-50"
         >
             {/* Right: Form section */}
             <div className="w-full md:w-1/2 flex flex-col justify-center px-6 sm:px-12 md:px-16 py-10 md:py-16">
