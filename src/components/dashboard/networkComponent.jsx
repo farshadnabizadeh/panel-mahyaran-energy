@@ -11,14 +11,14 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import dagre from 'dagre';
-import { apiCall } from '../../utils/api';
+import { apiCall } from '../../requests/api';
 import { FaSpinner, FaExclamationTriangle } from 'react-icons/fa';
 
 // =================================================================================
-// 1. کامپوننت‌های بصری برای نودها (Nodes)
+// 1. Visual Components for Nodes
 // =================================================================================
 
-// کامپوننت برای نود اصلی (کاربر لاگین کرده)
+// Component for main node (logged in user)
 const MainNode = ({ data }) => (
   <div
     style={{
@@ -33,19 +33,19 @@ const MainNode = ({ data }) => (
       fontFamily: 'Vazirmatn, Tahoma, sans-serif',
     }}
   >
-    {/* Handle برای اتصال ورودی از بالا */}
+    {/* Handle for input connection from top */}
     <Handle type="target" position={Position.Top} style={{ background: '#555', visibility: 'hidden' }} />
     
     <div style={{ fontWeight: 'bold', fontSize: '20px', marginBottom: '5px' }}>{data.name}</div>
     <div style={{ color: '#a0aec0', fontSize: '15px' }}>{data.position}</div>
     
-    {/* Handle برای اتصال خروجی به زیرمجموعه‌ها */}
+    {/* Handle for output connection to subordinates */}
     <Handle type="source" position={Position.Bottom} style={{ background: '#555' }} />
   </div>
 );
 
 
-// کامپonnet برای نودهای زیرمجموعه
+// Component for subordinate nodes
 const ChildNode = ({ data }) => (
   <div
     style={{
@@ -70,18 +70,18 @@ const ChildNode = ({ data }) => (
 
 
 // =================================================================================
-// 2. منطق چیدمان با کتابخانه Dagre
+// 2. Layout Logic with Dagre Library
 // =================================================================================
 const dagreGraph = new dagre.graphlib.Graph();
 dagreGraph.setDefaultEdgeLabel(() => ({}));
 
-// ابعاد نودها برای محاسبه چیدمان
+// Node dimensions for layout calculation
 const nodeWidth = 220;
-const nodeHeight = 120; // ارتفاع نودها کمتر شده چون تصویر حذف شده
+const nodeHeight = 120; // Node height reduced because image removed
 
 function getLayoutedElements(nodes, edges, direction = 'TB') {
   const isHorizontal = direction === 'LR';
-  dagreGraph.setGraph({ rankdir: direction, nodesep: 50, ranksep: 70 }); // فاصله بین نودها
+  dagreGraph.setGraph({ rankdir: direction, nodesep: 50, ranksep: 70 }); // Distance between nodes
 
   nodes.forEach((node) => dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight }));
   edges.forEach((edge) => dagreGraph.setEdge(edge.source, edge.target));
@@ -100,7 +100,7 @@ function getLayoutedElements(nodes, edges, direction = 'TB') {
 }
 
 // =================================================================================
-// 3. کامپوننت اصلی که منطق و API را مدیریت می‌کند
+// 3. Main component that manages logic and API
 // =================================================================================
 const LayoutedFlow = () => {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -108,14 +108,14 @@ const LayoutedFlow = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // تعریف انواع نودها برای React Flow
+  // Define node types for React Flow
   const nodeTypes = useMemo(() => ({ 
     mainNode: MainNode,
     childNode: ChildNode 
   }), []);
 
   useEffect(() => {
-    // برای سادگی، کاربر را مستقیماً از localStorage می‌خوانیم
+    // For simplicity, read user directly from localStorage
     const storedUser = localStorage.getItem('user');
     if (!storedUser) {
         setError("اطلاعات کاربر یافت نشد. لطفاً دوباره وارد شوید.");
@@ -133,10 +133,10 @@ const LayoutedFlow = () => {
             return;
         }
 
-        // ایجاد نود اصلی (کاربر فعلی)
+        // Create main node (current user)
         const parentNode = {
           id: String(data.parent.id),
-          type: 'mainNode', // <-- استفاده از نوع نود جدید
+          type: 'mainNode', // <-- Use new node type
           data: {
             name: `${data.parent.first_name || ''} ${data.parent.last_name || ''}`.trim(),
             position: 'شما', // A clear label
@@ -144,10 +144,10 @@ const LayoutedFlow = () => {
           position: { x: 0, y: 0 },
         };
 
-        // ایجاد نودهای فرزندان
+        // Create child nodes
         const childNodes = data.children.map((child) => ({
           id: String(child.id),
-          type: 'childNode', // <-- استفاده از نوع نود استاندارد
+          type: 'childNode', // <-- Use standard node type
           data: {
             name: `${child.first_name || ''} ${child.last_name || ''}`.trim(),
             position: 'زیرمجموعه',
@@ -155,7 +155,7 @@ const LayoutedFlow = () => {
           position: { x: 0, y: 0 },
         }));
 
-        // ایجاد اتصالات (Edges)
+        // Create connections (Edges)
         const connections = data.children.map((child) => ({
           id: `e-${data.parent.id}-${child.id}`,
           source: String(data.parent.id),
@@ -180,7 +180,7 @@ const LayoutedFlow = () => {
       .finally(() => {
         setLoading(false);
       });
-  }, [setNodes, setEdges]); // این useEffect فقط یک بار اجرا می‌شود
+  }, [setNodes, setEdges]); // This useEffect runs only once
 
   if (loading) {
     return (
@@ -209,7 +209,7 @@ const LayoutedFlow = () => {
         onEdgesChange={onEdgesChange}
         nodeTypes={nodeTypes}
         fitView
-        // ✅ کنترل زوم اولیه
+        // ✅ Initial zoom control
         fitViewOptions={{ maxZoom: 1 }} 
         proOptions={{ hideAttribution: true }}
         style={{ background: '#f0f2f5' }} // A slightly different background
@@ -223,10 +223,10 @@ const LayoutedFlow = () => {
 
 
 // =================================================================================
-// 4. کامپوننت Wrapper برای فراهم کردن Context
+// 4. Wrapper component to provide Context
 // =================================================================================
 const NetworkComponent = () => (
-  // به این کامپوننت کلاس‌های Tailwind می‌دهیم تا 100% ارتفاع و عرض را بگیرد
+  // Give this component Tailwind classes to take 100% height and width
   <div className="w-full h-full">
     <ReactFlowProvider>
       <LayoutedFlow />

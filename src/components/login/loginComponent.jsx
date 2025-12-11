@@ -5,7 +5,7 @@ import Swal from 'sweetalert2';
 import LoginImage from "../../assets/img/Login.jpg";
 import fa from "../../locales/fa.json";
 import { useNavigate } from "react-router-dom";
-import { apiCall } from "../../utils/api";
+import { apiCall } from "../../requests/api";
 
 const t = fa.loginPage;
 

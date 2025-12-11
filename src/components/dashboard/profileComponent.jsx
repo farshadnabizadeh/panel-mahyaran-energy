@@ -1,6 +1,6 @@
 // src/components/ProfileComponent.jsx
 import React, { useState, useEffect, useMemo } from 'react';
-import { apiCall } from '../../utils/api';
+import { apiCall } from '../../requests/api';
 import { FaUser, FaEnvelope, FaBirthdayCake, FaFlag, FaIdCard, FaLock, FaSave, FaTimes, FaEdit, FaSpinner, FaExclamationTriangle, FaHashtag, FaUserFriends } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 
@@ -16,7 +16,7 @@ const InputField = React.memo(({ icon, name, label, value, onChange, error, type
                 type={type}
                 id={name}
                 name={name}
-                // اگر مقدار null یا undefined بود، رشته خالی بگذار تا ارور React ندهد
+                // If value is null or undefined, set empty string to avoid React error
                 value={value ?? ''} 
                 onChange={onChange}
                 disabled={disabled}
@@ -55,9 +55,9 @@ const ProfileComponent = () => {
             
             const response = await apiCall('GET', '/user');
             
-            console.log("📌 Full Response:", response); // برای دیباگ
+            console.log("📌 Full Response:", response); // For debugging
 
-            // اصلاح مهم: چک می‌کنیم اگر دیتا داخل کلید user بود، آن را برداریم
+            // Important fix: Check if data is inside 'user' key, extract it
             const actualUser = response.user || response;
 
             setUserData(actualUser);
@@ -135,7 +135,7 @@ const ProfileComponent = () => {
 
         try {
             const response = await apiCall('PUT', '/user/profile', changedData);
-            // اینجا هم ممکن است سرور user را برگرداند
+            // Here too, server might return user
             const updatedUser = response.user || response;
             setUserData(updatedUser);
             setFormData(updatedUser);
@@ -249,13 +249,13 @@ const ProfileComponent = () => {
                         <InputField icon={<FaUser />} name="last_name" label="نام خانوادگی" value={formData.last_name} onChange={handleInputChange} error={validationErrors.last_name} disabled={!isEditing} />
                         <InputField icon={<FaEnvelope />} name="email" label="ایمیل" type="email" value={formData.email} onChange={handleInputChange} error={validationErrors.email} disabled={!isEditing} />
                         
-                        {/* اصلاح فرمت تاریخ برای نمایش صحیح در Input Date */}
+                        {/* Fix date format for correct display in Date Input */}
                         <InputField 
                             icon={<FaBirthdayCake />} 
                             name="birth_date" 
                             label="تاریخ تولد" 
                             type="date" 
-                            // تاریخ را از T جدا کن و قسمت اولش را بردار (YYYY-MM-DD)
+                            // Split date from T and take the first part (YYYY-MM-DD)
                             value={formData.birth_date ? formData.birth_date.split('T')[0] : ''} 
                             onChange={handleInputChange} 
                             error={validationErrors.birth_date} 
