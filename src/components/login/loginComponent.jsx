@@ -103,7 +103,7 @@ const LoginPage = () => {
     return (
         <div
             dir="rtl"
-            className="min-h-screen flex flex-col-reverse md:flex-row bg-gradient-to-tr from-slate-50 to-blue-50"
+            className="flex flex-col-reverse md:flex-row bg-gradient-to-tr from-slate-50 to-blue-50"
         >
             <div className="w-full md:w-1/2 flex flex-col justify-center px-6 sm:px-12 md:px-16 py-10 md:py-16">
                 <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-800 mb-3">

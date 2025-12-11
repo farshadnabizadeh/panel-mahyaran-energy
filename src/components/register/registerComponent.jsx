@@ -7,11 +7,18 @@ import {
     FaUsers,
     FaBirthdayCake,
     FaUserTie,
-    FaBriefcase, // New icon for Employer
+    FaBriefcase,
 } from "react-icons/fa";
 import Swal from 'sweetalert2';
 import Login from "../../assets/img/Login.jpg";
 import fa from "../../locales/fa.json";
+
+// --- New Date Picker Imports ---
+import DatePicker from "react-multi-date-picker";
+import persian from "react-date-object/calendars/persian";
+import persian_fa from "react-date-object/locales/persian_fa";
+import "react-multi-date-picker/styles/backgrounds/bg-dark.css"; // Optional styling theme
+// -------------------------------
 
 // API function
 const registerUser = async (userData) => {
@@ -37,6 +44,7 @@ const registerUser = async (userData) => {
 
 const t = fa.signUpPage;
 
+// Reusable Input Component
 const InputField = React.memo(({
     id,
     name,
@@ -48,7 +56,7 @@ const InputField = React.memo(({
     required = false,
 }) => (
     <div className="relative group">
-        <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 group-focus-within:text-blue-500 transition-colors">
+        <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 group-focus-within:text-blue-500 transition-colors pointer-events-none z-10">
             {icon}
         </span>
         <input
@@ -74,7 +82,7 @@ const SignUpPage = () => {
         lastName: "",
         nationality: "iran",
         nationalId: "",
-        birthDate: "",
+        birthDate: "", // Stores Gregorian date string like "2023-01-01" for Backend
         fatherName: "",
         shenasnamehNumber: "",
         referrerUsername: "",
@@ -82,19 +90,29 @@ const SignUpPage = () => {
         gender: "male",
         password: "",
         confirmPassword: "",
-        employer: false, // ADDED: Default is false (Networker)
+        employer: false,
     });
 
     const [loading, setLoading] = useState(false);
 
     const handleChange = (e) => {
-        const { name, value, type } = e.target;
-
+        const { name, value } = e.target;
         if (name === 'employer') {
-            // Handle employer boolean conversion
             setFormData((prev) => ({ ...prev, [name]: value === 'true' }));
         } else {
             setFormData((prev) => ({ ...prev, [name]: value }));
+        }
+    };
+
+    // --- New Date Handler ---
+    const handleDateChange = (dateObject) => {
+        if (dateObject) {
+            // Convert the selected Persian date to standard JavaScript Date (Gregorian)
+            // and then format it as YYYY-MM-DD string for the API.
+            const gregorianString = dateObject.toDate().toISOString().split('T')[0];
+            setFormData((prev) => ({ ...prev, birthDate: gregorianString }));
+        } else {
+            setFormData((prev) => ({ ...prev, birthDate: "" }));
         }
     };
 
@@ -107,7 +125,6 @@ const SignUpPage = () => {
                 title: 'خطا',
                 text: t.alerts.passwordMismatch || 'رمزهای عبور مطابقت ندارند',
                 confirmButtonText: 'متوجه شدم',
-                confirmButtonColor: '#3085d6',
             });
             return;
         }
@@ -123,13 +140,12 @@ const SignUpPage = () => {
                 birth_date: formData.birthDate,
                 father_name: formData.fatherName,
                 shenasnameh_number: formData.shenasnamehNumber,
-                // Logic: If employer is true, send null for referrer, otherwise send value
                 referrer_username: formData.employer ? null : formData.referrerUsername,
                 email: formData.email,
                 gender: formData.gender,
                 password: formData.password,
                 password_confirmation: formData.confirmPassword,
-                employer: formData.employer, // Send employer status
+                employer: formData.employer,
             };
 
             const response = await registerUser(apiData);
@@ -152,35 +168,17 @@ const SignUpPage = () => {
                 if (Object.keys(errorData).length > 0 && !errorData.general) {
                     const allErrors = Object.entries(errorData)
                         .map(([field, messages]) => {
-                            const fieldNames = {
-                                'first_name': 'نام',
-                                'last_name': 'نام خانوادگی',
-                                'nationality': 'ملیت',
-                                'national_id': 'کد ملی',
-                                'birth_date': 'تاریخ تولد',
-                                'father_name': 'نام پدر',
-                                'shenasnameh_number': 'شماره شناسنامه',
-                                'referrer_username': 'نام کاربری معرف',
-                                'email': 'ایمیل',
-                                'gender': 'جنسیت',
-                                'password': 'رمز عبور',
-                                'password_confirmation': 'تکرار رمز عبور',
-                                'employer': 'نوع حساب'
-                            };
-                            const fieldName = fieldNames[field] || field.replace('_', ' ');
+                            // Simple mapping for field names
+                            const fieldName = field; 
                             return `${fieldName}: ${messages[0]}`;
                         })
                         .join('\n\n');
 
                     Swal.fire({
                         icon: 'error',
-                        title: '<div style="direction: rtl; text-align: right;">خطاهای ثبت نام</div>',
-                        html: `<div style="direction: rtl; text-align: right; font-size: 1rem; line-height: 1.6;">${allErrors.replace(/\n\n/g, '<br><br>')}</div>`,
+                        title: 'خطاهای ثبت نام',
+                        html: `<div style="direction: rtl; text-align: right;">${allErrors.replace(/\n\n/g, '<br><br>')}</div>`,
                         confirmButtonText: 'متوجه شدم',
-                        confirmButtonColor: '#d33',
-                        customClass: { popup: 'text-right', content: 'text-right' },
-                        width: 500,
-                        padding: '1.5em'
                     });
                 } else {
                     Swal.fire({
@@ -204,10 +202,10 @@ const SignUpPage = () => {
     };
 
     return (
-        <div dir="rtl" className="h-screen overflow-hidden flex flex-col-reverse md:flex-row bg-gradient-to-tr from-slate-50 to-blue-50">
+        <div dir="rtl" className="h-auto md:h-screen overflow-hidden flex flex-col-reverse md:flex-row bg-gradient-to-tr from-slate-50 to-blue-50">
             {/* --- Right side form --- */}
             <div className="w-full overflow-y-scroll md:w-1/2 flex flex-col justify-center px-6 sm:px-12 md:px-16 py-10 md:py-16">
-                <h2 className="text-3xl sm:text-4xl mt-[200px] font-extrabold text-gray-800 mb-3">
+                <h2 className="text-3xl sm:text-4xl mt-4 md:mt-[200px] font-extrabold text-gray-800 mb-3">
                     {t.title}
                 </h2>
                 <p className="text-gray-500 mb-8 text-base sm:text-lg">{t.subtitle}</p>
@@ -233,7 +231,7 @@ const SignUpPage = () => {
                             icon={<FaUser />}
                         />
 
-                        {/* --- ADDED: Account Type (Employer vs Networker) --- */}
+                        {/* --- Account Type --- */}
                         <div className="sm:col-span-2 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
                             <span className="block text-sm font-semibold text-gray-700 mb-3">
                                 نوع حساب کاربری
@@ -267,7 +265,7 @@ const SignUpPage = () => {
                             </div>
                         </div>
 
-                        {/* Nationality */}
+                        {/* --- Nationality --- */}
                         <div className="sm:col-span-2">
                             <span className="block text-sm font-semibold text-gray-700 mb-2">
                                 {t.fields.nationality}
@@ -298,15 +296,26 @@ const SignUpPage = () => {
                             onChange={handleChange}
                             icon={<FaIdCard />}
                         />
-                        <InputField
-                            id="birthDate"
-                            name="birthDate"
-                            type="date"
-                            placeholder={t.fields.birthDate}
-                            value={formData.birthDate}
-                            onChange={handleChange}
-                            icon={<FaBirthdayCake />}
-                        />
+                        
+                        {/* --- NEW Persian Date Picker --- */}
+                        <div className="relative group w-full">
+                            {/* Icon overlay */}
+                            <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 group-focus-within:text-blue-500 transition-colors z-10 pointer-events-none">
+                                <FaBirthdayCake />
+                            </span>
+                            
+                            <DatePicker
+                                calendar={persian}
+                                locale={persian_fa}
+                                value={formData.birthDate ? new Date(formData.birthDate) : ""}
+                                onChange={handleDateChange}
+                                placeholder={t.fields.birthDate || "تاریخ تولد"}
+                                containerClassName="w-full"
+                                inputClass="w-full py-3 pr-10 pl-4 rounded-xl bg-gray-50 border border-gray-200 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-300 transition-all duration-200 shadow-sm focus:shadow-md font-sans"
+                                format="YYYY/MM/DD"
+                            />
+                        </div>
+
                         <InputField
                             id="fatherName"
                             name="fatherName"
@@ -326,7 +335,6 @@ const SignUpPage = () => {
                             icon={<FaIdCard />}
                         />
 
-                        {/* --- CONDITIONAL RENDERING: Hide Referrer if Employer --- */}
                         {!formData.employer && (
                             <div className="animate-fade-in">
                                 <InputField
@@ -351,7 +359,7 @@ const SignUpPage = () => {
                             icon={<FaEnvelope />}
                         />
 
-                        {/* Gender */}
+                        {/* --- Gender --- */}
                         <div className="sm:col-span-2">
                             <span className="block text-sm font-semibold text-gray-700 mb-2">
                                 {t.fields.gender}
@@ -406,7 +414,6 @@ const SignUpPage = () => {
                     >
                         {loading ? (
                             <span className="flex items-center justify-center">
-                                {/* SVG Spinner */}
                                 <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
