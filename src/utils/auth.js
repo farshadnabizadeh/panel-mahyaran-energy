@@ -1,4 +1,4 @@
-import { apiCall } from "./api";
+import { apiCall } from "../requests/api";
 // Get token from localStorage
 export const getToken = () => {
     return localStorage.getItem('authToken');

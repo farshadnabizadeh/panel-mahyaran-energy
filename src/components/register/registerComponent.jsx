@@ -7,14 +7,15 @@ import {
     FaUsers,
     FaBirthdayCake,
     FaUserTie,
+    FaBriefcase, // New icon for Employer
 } from "react-icons/fa";
-import Swal from 'sweetalert2'; // Import SweetAlert2
+import Swal from 'sweetalert2';
 import Login from "../../assets/img/Login.jpg";
 import fa from "../../locales/fa.json";
 
 // API function
 const registerUser = async (userData) => {
-    const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api'; // Update with your Laravel API URL
+    const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 
     const response = await fetch(`${API_BASE_URL}/register`, {
         method: 'POST',
@@ -81,16 +82,17 @@ const SignUpPage = () => {
         gender: "male",
         password: "",
         confirmPassword: "",
+        employer: false, // ADDED: Default is false (Networker)
     });
 
     const [loading, setLoading] = useState(false);
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
+        const { name, value, type } = e.target;
 
-        // Handle radio buttons
-        if (e.target.type === 'radio') {
-            setFormData((prev) => ({ ...prev, [name]: value }));
+        if (name === 'employer') {
+            // Handle employer boolean conversion
+            setFormData((prev) => ({ ...prev, [name]: value === 'true' }));
         } else {
             setFormData((prev) => ({ ...prev, [name]: value }));
         }
@@ -99,7 +101,6 @@ const SignUpPage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Client-side password confirmation check
         if (formData.password !== formData.confirmPassword) {
             Swal.fire({
                 icon: 'error',
@@ -114,7 +115,6 @@ const SignUpPage = () => {
         setLoading(true);
 
         try {
-            // Prepare data for API - exclude confirmPassword and add password_confirmation
             const apiData = {
                 first_name: formData.firstName,
                 last_name: formData.lastName,
@@ -123,16 +123,17 @@ const SignUpPage = () => {
                 birth_date: formData.birthDate,
                 father_name: formData.fatherName,
                 shenasnameh_number: formData.shenasnamehNumber,
-                referrer_username: formData.referrerUsername,
+                // Logic: If employer is true, send null for referrer, otherwise send value
+                referrer_username: formData.employer ? null : formData.referrerUsername,
                 email: formData.email,
                 gender: formData.gender,
                 password: formData.password,
-                password_confirmation: formData.confirmPassword, // Laravel expects this field name
+                password_confirmation: formData.confirmPassword,
+                employer: formData.employer, // Send employer status
             };
 
             const response = await registerUser(apiData);
 
-            // Show success message
             Swal.fire({
                 icon: 'success',
                 title: 'موفقیت',
@@ -141,22 +142,16 @@ const SignUpPage = () => {
                 confirmButtonColor: '#28a745',
             }).then((result) => {
                 if (result.isConfirmed) {
-                    // Redirect to login page
                     window.location.href = '/login';
                 }
             });
 
         } catch (err) {
-            // Handle validation errors from Laravel
             try {
                 const errorData = JSON.parse(err.message);
-
-                // Check if errorData has validation errors (not the "errors" wrapper)
                 if (Object.keys(errorData).length > 0 && !errorData.general) {
-                    // Convert all validation errors to a single string
                     const allErrors = Object.entries(errorData)
                         .map(([field, messages]) => {
-                            // Map field names to user-friendly names
                             const fieldNames = {
                                 'first_name': 'نام',
                                 'last_name': 'نام خانوادگی',
@@ -169,71 +164,47 @@ const SignUpPage = () => {
                                 'email': 'ایمیل',
                                 'gender': 'جنسیت',
                                 'password': 'رمز عبور',
-                                'password_confirmation': 'تکرار رمز عبور'
+                                'password_confirmation': 'تکرار رمز عبور',
+                                'employer': 'نوع حساب'
                             };
-
                             const fieldName = fieldNames[field] || field.replace('_', ' ');
                             return `${fieldName}: ${messages[0]}`;
                         })
                         .join('\n\n');
 
-                    // Show all validation errors in SweetAlert
                     Swal.fire({
                         icon: 'error',
                         title: '<div style="direction: rtl; text-align: right;">خطاهای ثبت نام</div>',
                         html: `<div style="direction: rtl; text-align: right; font-size: 1rem; line-height: 1.6;">${allErrors.replace(/\n\n/g, '<br><br>')}</div>`,
                         confirmButtonText: 'متوجه شدم',
                         confirmButtonColor: '#d33',
-                        customClass: {
-                            popup: 'text-right',
-                            content: 'text-right'
-                        },
+                        customClass: { popup: 'text-right', content: 'text-right' },
                         width: 500,
                         padding: '1.5em'
                     });
                 } else {
-                    // Handle general errors
                     Swal.fire({
                         icon: 'error',
-                        title: '<div style="direction: rtl; text-align: right;">خطا</div>',
+                        title: 'خطا',
                         text: errorData.general || 'ثبت نام با خطا مواجه شد',
                         confirmButtonText: 'متوجه شدم',
-                        confirmButtonColor: '#d33',
-                        customClass: {
-                            popup: 'text-right',
-                            content: 'text-right'
-                        },
-                        width: 400,
-                        padding: '1.5em'
                     });
                 }
             } catch (parseErr) {
-                // Handle JSON parsing errors
                 Swal.fire({
                     icon: 'error',
-                    title: '<div style="direction: rtl; text-align: right;">خطا</div>',
+                    title: 'خطا',
                     text: 'ثبت نام با خطا مواجه شد',
                     confirmButtonText: 'متوجه شدم',
-                    confirmButtonColor: '#d33',
-                    customClass: {
-                        popup: 'text-right',
-                        content: 'text-right'
-                    },
-                    width: 400,
-                    padding: '1.5em'
                 });
             }
-        }
-        finally {
+        } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div
-            dir="rtl"
-            className="h-screen overflow-hidden flex flex-col-reverse md:flex-row bg-gradient-to-tr from-slate-50 to-blue-50"
-        >
+        <div dir="rtl" className="h-screen overflow-hidden flex flex-col-reverse md:flex-row bg-gradient-to-tr from-slate-50 to-blue-50">
             {/* --- Right side form --- */}
             <div className="w-full overflow-y-scroll md:w-1/2 flex flex-col justify-center px-6 sm:px-12 md:px-16 py-10 md:py-16">
                 <h2 className="text-3xl sm:text-4xl mt-[200px] font-extrabold text-gray-800 mb-3">
@@ -261,6 +232,40 @@ const SignUpPage = () => {
                             onChange={handleChange}
                             icon={<FaUser />}
                         />
+
+                        {/* --- ADDED: Account Type (Employer vs Networker) --- */}
+                        <div className="sm:col-span-2 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                            <span className="block text-sm font-semibold text-gray-700 mb-3">
+                                نوع حساب کاربری
+                            </span>
+                            <div className="flex flex-wrap items-center gap-6">
+                                <label className={`flex items-center gap-3 cursor-pointer p-2 rounded-lg transition-colors ${!formData.employer ? 'bg-blue-50 ring-1 ring-blue-200' : ''}`}>
+                                    <input
+                                        type="radio"
+                                        name="employer"
+                                        value="false"
+                                        checked={formData.employer === false}
+                                        onChange={handleChange}
+                                        className="w-4 h-4 text-blue-600 focus:ring-blue-400"
+                                    />
+                                    <FaUsers className="text-blue-500" />
+                                    <span className="text-gray-700 font-medium">بازاریاب / کاربر عادی</span>
+                                </label>
+
+                                <label className={`flex items-center gap-3 cursor-pointer p-2 rounded-lg transition-colors ${formData.employer ? 'bg-blue-50 ring-1 ring-blue-200' : ''}`}>
+                                    <input
+                                        type="radio"
+                                        name="employer"
+                                        value="true"
+                                        checked={formData.employer === true}
+                                        onChange={handleChange}
+                                        className="w-4 h-4 text-blue-600 focus:ring-blue-400"
+                                    />
+                                    <FaBriefcase className="text-indigo-500" />
+                                    <span className="text-gray-700 font-medium">کارفرما</span>
+                                </label>
+                            </div>
+                        </div>
 
                         {/* Nationality */}
                         <div className="sm:col-span-2">
@@ -320,15 +325,22 @@ const SignUpPage = () => {
                             onChange={handleChange}
                             icon={<FaIdCard />}
                         />
-                        <InputField
-                            id="referrerUsername"
-                            name="referrerUsername"
-                            type="text"
-                            placeholder={t.fields.referrerUsername}
-                            value={formData.referrerUsername}
-                            onChange={handleChange}
-                            icon={<FaUsers />}
-                        />
+
+                        {/* --- CONDITIONAL RENDERING: Hide Referrer if Employer --- */}
+                        {!formData.employer && (
+                            <div className="animate-fade-in">
+                                <InputField
+                                    id="referrerUsername"
+                                    name="referrerUsername"
+                                    type="text"
+                                    placeholder={t.fields.referrerUsername}
+                                    value={formData.referrerUsername}
+                                    onChange={handleChange}
+                                    icon={<FaUsers />}
+                                />
+                            </div>
+                        )}
+
                         <InputField
                             id="email"
                             name="email"
@@ -394,6 +406,7 @@ const SignUpPage = () => {
                     >
                         {loading ? (
                             <span className="flex items-center justify-center">
+                                {/* SVG Spinner */}
                                 <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -405,7 +418,6 @@ const SignUpPage = () => {
                         )}
                     </button>
 
-                    {/* --- Login section --- */}
                     <div className="text-center mt-6">
                         <span className="text-gray-600">{t.loginPrompt || "حساب دارید؟"}</span>
                         <a
