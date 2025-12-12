@@ -1,12 +1,16 @@
 // src/components/dashboard/supportComponent.jsx
 import React, { useState, useEffect } from 'react';
 import { apiCall } from '../../requests/api';
-import { FaTicketAlt, FaSpinner, FaExclamationTriangle, FaClock, FaCheckCircle, FaTimesCircle, FaExclamationCircle } from 'react-icons/fa';
+import { FaTicketAlt, FaSpinner, FaExclamationTriangle, FaClock, FaCheckCircle, FaTimesCircle, FaExclamationCircle, FaReply, FaPaperPlane, FaPlus, FaComments, FaUser, FaCalendarAlt } from 'react-icons/fa';
+import Swal from 'sweetalert2';
 
 const SupportComponent = () => {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [replyMessage, setReplyMessage] = useState('');
+  const [sendingReply, setSendingReply] = useState(false);
 
   const fetchUserData = async () => {
     try {
@@ -64,7 +68,7 @@ const SupportComponent = () => {
       case 'high':
         return 'bg-red-100 text-red-800';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
@@ -90,8 +94,8 @@ const SupportComponent = () => {
   if (!userData || !userData.tickets) return null;
 
   return (
-    <div dir="rtl" className="w-full min-h-screen bg-gray-100 p-4 sm:p-6 md:p-8">
-      <div className="max-w-6xl mx-auto">
+    <div dir="rtl" className="w-full min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-4 sm:p-6 md:p-8">
+      <div className="max-w-7xl mx-auto">
         <div className="bg-white rounded-xl shadow-md p-6 mb-8">
           <h1 className="text-3xl font-bold text-gray-800 mb-2 flex items-center gap-3">
             <FaTicketAlt className="text-indigo-600" />
@@ -111,7 +115,7 @@ const SupportComponent = () => {
         ) : (
           <div className="grid gap-6">
             {userData.tickets.map((ticket) => (
-              <div key={ticket.id} className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow">
+              <div key={ticket.id} className="bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
                     {getStatusIcon(ticket.status)}

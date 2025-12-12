@@ -1,6 +1,7 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
 import PrivateRoute from './components/auth/PrivateRoute'; // Import PrivateRoute
+import PublicRoute from './components/auth/PublicRoute'; // Import PublicRoute
 
 import Counter from "./components/example/exampleComponent";
 import RegisterForm from "./components/register/registerComponent";
@@ -16,9 +17,21 @@ export default function App() {
     <div className="w-full min-h-screen">
       <Routes>
         {/* Public routes */}
-        <Route path="/" element={<RegisterForm />} />
-        <Route path="/login" element={<LoginComponent />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/" element={
+          <PublicRoute>
+            <RegisterForm />
+          </PublicRoute>
+        } />
+        <Route path="/login" element={
+          <PublicRoute>
+            <LoginComponent />
+          </PublicRoute>
+        } />
+        <Route path="/forgot-password" element={
+          <PublicRoute>
+            <ForgotPasswordPage />
+          </PublicRoute>
+        } />
         <Route path="/about" element={<Counter />} />
 
         {/* Panel layout (private routes) */}
