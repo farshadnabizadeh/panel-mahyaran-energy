@@ -11,9 +11,7 @@ import {
   FaExclamationCircle,
   FaPaperPlane,
   FaPlus,
-  FaCalendarAlt,
-  FaChevronDown,
-  FaChevronUp
+  FaCalendarAlt
 } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 
@@ -21,7 +19,7 @@ const SupportComponent = () => {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
-  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form State
@@ -70,7 +68,7 @@ const SupportComponent = () => {
     try {
       setIsSubmitting(true);
       
-      // Example API call - Ensure your backend endpoint is correct
+      // API Call Placeholder
       await apiCall('POST', '/tickets', newTicket);
 
       Swal.fire({
@@ -83,7 +81,7 @@ const SupportComponent = () => {
 
       setNewTicket({ subject: '', priority: 'medium', message: '' });
       setShowCreateForm(false);
-      fetchUserData(); // Refresh list
+      fetchUserData(); 
 
     } catch (error) {
       console.error(error);
@@ -160,7 +158,7 @@ const SupportComponent = () => {
     <div dir="rtl" className="w-full min-h-screen bg-gray-50 p-4 md:p-8 font-sans">
       <div className="max-w-5xl mx-auto space-y-6">
         
-        {/* Header Section */}
+        {/* Header */}
         <div className="flex flex-col md:flex-row items-center justify-between bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center gap-4 mb-4 md:mb-0">
             <div className="p-3 bg-indigo-100 rounded-full">
@@ -173,18 +171,18 @@ const SupportComponent = () => {
           </div>
           <button
             onClick={() => setShowCreateForm(!showCreateForm)}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all duration-300 shadow-sm ${
+            className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl transition-all duration-300 shadow-sm ${
               showCreateForm 
                 ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200' 
                 : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-200'
             }`}
           >
             {showCreateForm ? <FaTimesCircle /> : <FaPlus />}
-            {showCreateForm ? 'انصراف' : 'ثبت تیکت جدید'}
+            {showCreateForm ? 'بستن فرم' : 'ثبت تیکت جدید'}
           </button>
         </div>
 
-        {/* Create Ticket Form (Collapsible) */}
+        {/* Create Ticket Form */}
         <div className={`transition-all duration-500 ease-in-out overflow-hidden ${showCreateForm ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'}`}>
           <div className="bg-white rounded-2xl shadow-md border border-indigo-100 p-6 md:p-8">
             <h2 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
@@ -231,21 +229,22 @@ const SupportComponent = () => {
                 ></textarea>
               </div>
 
+              {/* FIX: Container alignment and Button alignment */}
               <div className="flex justify-end">
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex items-center gap-2 px-8 py-3 bg-gradient-to-l from-indigo-600 to-blue-600 text-white rounded-xl hover:from-indigo-700 hover:to-blue-700 transition-all duration-300 shadow-lg shadow-indigo-200 disabled:opacity-70 disabled:cursor-not-allowed transform active:scale-95"
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3 bg-gradient-to-l from-indigo-600 to-blue-600 text-white rounded-xl hover:from-indigo-700 hover:to-blue-700 transition-all duration-300 shadow-lg shadow-indigo-200 disabled:opacity-70 disabled:cursor-not-allowed transform active:scale-95"
                 >
                   {isSubmitting ? (
                     <>
                       <FaSpinner className="animate-spin" />
-                      در حال ارسال...
+                      <span>در حال ارسال...</span>
                     </>
                   ) : (
                     <>
                       <FaPaperPlane />
-                      ارسال تیکت
+                      <span>ارسال تیکت</span>
                     </>
                   )}
                 </button>
@@ -273,7 +272,6 @@ const SupportComponent = () => {
           ) : (
             userData.tickets.map((ticket) => (
               <div key={ticket.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300 overflow-hidden group">
-                {/* Ticket Header */}
                 <div className="p-6 border-b border-gray-50 bg-white">
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                     <div className="flex items-start gap-4">
@@ -309,7 +307,6 @@ const SupportComponent = () => {
                   </div>
                 </div>
 
-                {/* Ticket Content */}
                 <div className="p-6 bg-gray-50/50 space-y-4">
                   <div className="flex gap-4">
                     <div className="hidden sm:flex flex-col items-center gap-1">
@@ -324,7 +321,6 @@ const SupportComponent = () => {
                     </div>
                   </div>
 
-                  {/* Support Response */}
                   {ticket.response_message && (
                     <div className="flex gap-4">
                       <div className="flex-1 bg-indigo-50/50 p-4 rounded-xl rounded-tl-none border border-indigo-100 relative">
@@ -340,11 +336,7 @@ const SupportComponent = () => {
                           {ticket.response_message}
                         </p>
                       </div>
-                      <div className="hidden sm:flex flex-col items-center gap-1">
-                        <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white">
-                            <FaPaperPlane className="text-sm" />
-                        </div>
-                      </div>
+                      
                     </div>
                   )}
                 </div>
